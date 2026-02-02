@@ -1,13 +1,27 @@
 package main
 
-import "log"
+import (
+	"log"
+
+	"github.com/d4rthvadr/dusky-go/internal/config"
+	"github.com/joho/godotenv"
+)
 
 func main() {
 
-	config := AppConfig{
-		addr: ":8082",
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
 	}
-	app := NewApplication(config)
+
+	config, err := config.InitializeConfig()
+	if err != nil {
+		log.Fatal("Error initializing config:", err)
+	}
+
+	app := NewApplication(AppConfig{
+		addr: config.Server.Host,
+	})
 
 	mux := app.mount()
 

@@ -35,7 +35,7 @@ func (app *application) mount() *chi.Mux {
 func (app *application) Run(mux *chi.Mux) error {
 
 	srv := http.Server{
-		Addr:         app.config.addr,
+		Addr:         ":" + app.config.addr,
 		Handler:      mux,
 		WriteTimeout: time.Second * 30,
 		ReadTimeout:  time.Second * 15,
