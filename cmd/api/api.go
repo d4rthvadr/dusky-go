@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -47,6 +48,6 @@ func (app *application) Run(mux *chi.Mux) error {
 	return srv.ListenAndServe()
 }
 
-func NewApplication(config AppConfig) *application {
+func NewApplication(config AppConfig, store store.Storage) *application {
 	return &application{config: config}
 }

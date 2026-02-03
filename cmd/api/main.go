@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/d4rthvadr/dusky-go/internal/config"
+	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/joho/godotenv"
 )
 
@@ -19,9 +20,10 @@ func main() {
 		log.Fatal("Error initializing config:", err)
 	}
 
+	store := store.NewStorage(nil)
 	app := NewApplication(AppConfig{
 		addr: config.Server.Host,
-	})
+	}, store)
 
 	mux := app.mount()
 
