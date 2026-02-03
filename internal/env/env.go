@@ -5,25 +5,25 @@ import (
 	"strconv"
 )
 
-func GetEnv(key, fallback string) string {
+func GetEnv(key, defaultValue string) string {
 
 	val, ok := os.LookupEnv(key)
 	if !ok {
-		return fallback
+		return defaultValue
 	}
 	return val
 }
 
-func GetEnvAsInt(key string, fallback int) int {
+func GetEnvAsInt(key string, defaultValue int) int {
 
 	valStr, ok := os.LookupEnv(key)
 	if !ok {
-		return fallback
+		return defaultValue
 	}
 
 	valAsInt, err := strconv.Atoi(valStr)
 	if err != nil {
-		return fallback
+		return defaultValue
 	}
 	return valAsInt
 }
