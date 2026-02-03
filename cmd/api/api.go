@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"time"
@@ -12,6 +13,8 @@ import (
 
 type application struct {
 	config AppConfig
+	store  store.Storage
+	db     *sql.DB
 }
 
 type AppConfig struct {
@@ -48,6 +51,6 @@ func (app *application) Run(mux *chi.Mux) error {
 	return srv.ListenAndServe()
 }
 
-func NewApplication(config AppConfig, store store.Storage) *application {
-	return &application{config: config}
+func NewApplication(config AppConfig, store store.Storage, db *sql.DB) *application {
+	return &application{config, store, db}
 }
