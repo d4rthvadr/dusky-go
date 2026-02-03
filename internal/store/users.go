@@ -12,6 +12,13 @@ type UserStore struct {
 }
 
 func (u *UserStore) Create(ctx context.Context, user *models.User) error {
-	// Implementation for creating a user in the database
-	return nil
+
+	query := `
+	INSERT INTO users (username, email, password) 
+	VALUES ($1, $2, $3) RETURNING id, created_at, updated_at
+	`
+	err := u.db.QueryRowContext(ctx, query, user.Username, user.Email, user.Password).
+		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+
+	return err
 }
