@@ -3,13 +3,15 @@ package store
 import (
 	"context"
 	"database/sql"
+
+	"github.com/d4rthvadr/dusky-go/internal/models"
 )
 
-type UsersStore struct {
+type UserStore struct {
 	db *sql.DB
 }
 
-func (u *UsersStore) Create(ctx context.Context) error {
+func (u *UserStore) Create(ctx context.Context, user *models.User) error {
 	// Implementation for creating a user in the database
 	return nil
 }

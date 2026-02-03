@@ -3,14 +3,16 @@ package store
 import (
 	"context"
 	"database/sql"
+
+	"github.com/d4rthvadr/dusky-go/internal/models"
 )
 
 type Storage struct {
 	Posts interface {
-		Create(context.Context) error
+		Create(context.Context, *models.Post) error
 	}
 	Users interface {
-		Create(context.Context) error
+		Create(context.Context, *models.User) error
 	}
 }
 
@@ -20,7 +22,7 @@ type PostgresStorage struct {
 
 func NewStorage(db *sql.DB) Storage {
 	return Storage{
-		Posts: &PostsStore{db: db},
-		Users: &UsersStore{db: db},
+		Posts: &PostStore{db: db},
+		Users: &UserStore{db: db},
 	}
 }
