@@ -60,10 +60,10 @@ cp .env.example .env
 docker-compose up -d
 ```
 
-5. Run database migrations (if applicable)
+5. Run database migrations
 
 ```bash
-# Add migration commands here
+make migrate-up
 ```
 
 6. Build and run the application
@@ -80,6 +80,45 @@ The API will be available at `http://localhost:3000`
 
 ```bash
 go run cmd/api/main.go
+```
+
+### Database Migrations
+
+View all available make commands:
+
+```bash
+make help
+```
+
+Create a new migration:
+
+```bash
+make migrate name=create_posts
+make migrate name=add_index_to_users
+```
+
+Run all pending migrations:
+
+```bash
+make migrate-up
+```
+
+Rollback the last migration:
+
+```bash
+make migrate-down
+```
+
+Check current migration version:
+
+```bash
+make migrate-version
+```
+
+Force migration version (use when database is in dirty state):
+
+```bash
+make migrate-force version=1
 ```
 
 ### Building for production
