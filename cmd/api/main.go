@@ -26,6 +26,9 @@ func main() {
 		log.Panic("Error connecting to the database:", err)
 	}
 
+	defer db.Close()
+	log.Println("Connected to the database successfully")
+
 	store := store.NewStorage(nil)
 
 	app := NewApplication(AppConfig{
