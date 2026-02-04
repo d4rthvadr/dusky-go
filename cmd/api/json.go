@@ -21,6 +21,7 @@ func writeJSONError(w http.ResponseWriter, status int, message string) error {
 	data := envelope{
 		Error: message,
 	}
+
 	return writeJSON(w, status, data)
 
 }

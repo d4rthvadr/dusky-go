@@ -35,12 +35,12 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.store.Posts.Create(r.Context(), &postModel)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := writeJSON(w, http.StatusCreated, postModel); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 
@@ -52,7 +52,7 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	postID, err := parseIDParam(r, "postID")
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, err.Error())
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -62,10 +62,10 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch {
 		case errors.Is(err, errCustom.ErrResourceNotFound):
-			writeJSONError(w, http.StatusNotFound, err.Error())
+			app.notFoundError(w, r, err)
 			return
 		default:
-			writeJSONError(w, http.StatusInternalServerError, err.Error())
+			app.internalServerError(w, r, err)
 			return
 		}
 
@@ -84,11 +84,11 @@ func (app *application) listPostsHandler(w http.ResponseWriter, r *http.Request)
 	err := app.store.Posts.List(r.Context(), &posts)
 
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := writeJSON(w, http.StatusOK, posts); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 	}
 }
