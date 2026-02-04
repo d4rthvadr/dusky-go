@@ -31,7 +31,7 @@ func main() {
 	defer db.Close()
 	log.Println("Connected to the database successfully")
 
-	store := store.NewStorage(nil)
+	store := store.NewStorage(db)
 
 	app := NewApplication(AppConfig{
 		addr: config.Server.Host,
