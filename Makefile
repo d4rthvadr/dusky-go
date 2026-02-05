@@ -1,6 +1,6 @@
 
 .DEFAULT_GOAL := help
-.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version
+.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version seed
 MIGRATION_DIR := ./migrations
 
 include .env
@@ -16,6 +16,7 @@ help: ## Show this help message
 	@echo "  migrate-down Rollback the last migration"
 	@echo "  migrate-force Force set migration version (usage: make migrate-force version=<version>)"
 	@echo "  migrate-version Show current migration version"
+	@echo "  seed         Seed the database with initial data"
 
 migrate: ## Create a new migration file (usage: make migrate name=<migration_name>)
 	@if [ -z "$(name)" ]; then echo "Usage: make migrate name=<migration_name>"; exit 1; fi
@@ -34,3 +35,6 @@ migrate-force: ## Force set migration version (usage: make migrate-force version
 
 migrate-version: ## Show current migration version
 	@migrate -path=$(MIGRATION_DIR) -database "$(DB_URL)" version	
+
+seed: ## Seed the database with initial data
+	@go run ./cmd/seed/seed.go	
