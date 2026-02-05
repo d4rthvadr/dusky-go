@@ -74,24 +74,16 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	if err := writeJSON(w, http.StatusOK, post); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-}
-
-func (app *application) listPostsHandler(w http.ResponseWriter, r *http.Request) {
-
-	var posts []models.Post
-
-	err := app.store.Posts.List(r.Context(), &posts)
-
+	comments, err := app.store.Comments.GetByPostID(ctx, postID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	if err := writeJSON(w, http.StatusOK, posts); err != nil {
-		app.internalServerError(w, r, err)
+	post.Comments = comments
+
+	if err := writeJSON(w, http.StatusOK, post); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 }
