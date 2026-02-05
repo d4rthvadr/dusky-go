@@ -15,6 +15,8 @@ type createPostPayload struct {
 	Tags    []string `json:"tags,omitempty" validate:"dive,required"`
 }
 
+const PostIDKey string = "postID"
+
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	var userID int64 = 1 // Placeholder for authenticated user ID
@@ -49,11 +51,19 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 }
 
+func (app *application) getPostID(r *http.Request) (int64, error) {
+	postID, err := parseIDParam(r, PostIDKey)
+	if err != nil {
+		return 0, err
+	}
+	return postID, nil
+}
+
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	postID, err := parseIDParam(r, "postID")
+	postID, err := app.getPostID(r)
 	if err != nil {
 		app.badRequestError(w, r, err)
 		return
@@ -86,4 +96,76 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+}
+
+func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	postID, err := app.getPostID(r)
+	if err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	if err := app.store.Posts.Delete(ctx, postID); err != nil {
+
+		switch {
+		case errors.Is(err, errCustom.ErrResourceNotFound):
+			app.notFoundError(w, r, err)
+			return
+		default:
+			app.internalServerError(w, r, err)
+			return
+		}
+
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+}
+
+func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	postID, err := app.getPostID(r)
+	if err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	var payload createPostPayload
+	if err := readJSON(r, &payload); err != nil {
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validatorInstance.Struct(payload); err != nil {
+		writeValidationError(w, err)
+		return
+	}
+
+	postModel := models.Post{
+		ID:      postID,
+		Title:   payload.Title,
+		Content: payload.Content,
+		Tags:    payload.Tags,
+	}
+
+	if err := app.store.Posts.Update(ctx, &postModel); err != nil {
+		switch {
+		case errors.Is(err, errCustom.ErrResourceNotFound):
+			app.notFoundError(w, r, err)
+			return
+		default:
+			app.internalServerError(w, r, err)
+			return
+		}
+	}
+
+	if err := writeJSON(w, http.StatusOK, postModel); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
 }

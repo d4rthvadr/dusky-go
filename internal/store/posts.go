@@ -43,3 +43,39 @@ func (p *PostStore) GetByID(ctx context.Context, id int64) (*models.Post, error)
 
 	return &post, err
 }
+
+func (p *PostStore) Update(ctx context.Context, post *models.Post) error {
+	query := `
+	UPDATE posts
+	SET title = $1, content = $2, tags = $3
+	WHERE id = $4
+	RETURNING updated_at
+	`
+	err := p.db.QueryRowContext(ctx, query, post.Title, post.Content, pq.Array(post.Tags), post.ID).
+		Scan(&post.UpdatedAt)
+
+	return errCustom.HandleStorageError(err)
+}
+
+func (p *PostStore) Delete(ctx context.Context, id int64) error {
+	query := `
+	DELETE FROM posts
+	WHERE id = $1
+	`
+
+	result, err := p.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return errCustom.HandleStorageError(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errCustom.HandleStorageError(err)
+	}
+
+	if rowsAffected == 0 {
+		return errCustom.ErrResourceNotFound
+	}
+
+	return nil
+}
