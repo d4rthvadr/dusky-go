@@ -29,7 +29,6 @@ func main() {
 	}
 
 	defer db.Close()
-	log.Println("Connected to the database successfully")
 
 	store := store.NewStorage(db)
 

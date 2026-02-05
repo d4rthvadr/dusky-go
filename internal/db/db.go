@@ -3,11 +3,12 @@ package db
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 )
 
 // New initializes and returns a new database connection pool.
-func New(addr string, maxOpenConns, maxIdleConns int, maxIdleTime time.Duration) (*sql.DB, error) {
+func setupDatabaseConn(addr string, maxOpenConns, maxIdleConns int, maxIdleTime time.Duration) (*sql.DB, error) {
 
 	db, err := sql.Open("postgres", addr)
 	if err != nil {
@@ -28,4 +29,17 @@ func New(addr string, maxOpenConns, maxIdleConns int, maxIdleTime time.Duration)
 		return nil, err
 	}
 	return db, nil
+}
+
+func New(addr string, maxOpenConns, maxIdleConns int, maxIdleTime time.Duration) (*sql.DB, error) {
+
+	db, err := setupDatabaseConn(addr, maxOpenConns, maxIdleConns, maxIdleTime)
+	if err != nil {
+		log.Panic("Error connecting to the database:", err)
+	}
+
+	log.Println("Connected to the database successfully")
+
+	return db, nil
+
 }
