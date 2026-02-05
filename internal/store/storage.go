@@ -3,9 +3,12 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/models"
 )
+
+const defaultQueryTimeoutDuration = 5 * time.Second
 
 type Storage struct {
 	Posts interface {

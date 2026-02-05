@@ -15,6 +15,9 @@ type PostStore struct {
 
 // Create inserts a new post into the database and updates the post model with the generated ID and timestamps
 func (p *PostStore) Create(ctx context.Context, post *models.Post) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
 	query := `
 	INSERT INTO posts (title, content, user_id, tags) 
 	VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at
@@ -33,6 +36,9 @@ func (p *PostStore) GetByID(ctx context.Context, id int64) (*models.Post, error)
 	WHERE id = $1
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
 	var post models.Post
 	err := p.db.QueryRowContext(ctx, query, id).
 		Scan(&post.ID, &post.Title, &post.Content, &post.Version, &post.UserID, pq.Array(&post.Tags), &post.CreatedAt, &post.UpdatedAt)
@@ -47,6 +53,9 @@ func (p *PostStore) GetByID(ctx context.Context, id int64) (*models.Post, error)
 }
 
 func (p *PostStore) Update(ctx context.Context, post *models.Post) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
 	query := `
 	UPDATE posts
 	SET title = $1, content = $2, tags = $3, version = version + 1
@@ -60,6 +69,9 @@ func (p *PostStore) Update(ctx context.Context, post *models.Post) error {
 
 // Delete removes a post from the database by its ID
 func (p *PostStore) Delete(ctx context.Context, id int64) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
 	query := `
 	DELETE FROM posts
 	WHERE id = $1
