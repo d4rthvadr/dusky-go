@@ -10,9 +10,9 @@ import (
 )
 
 type createPostPayload struct {
-	Title   string   `json:"title"`
-	Content string   `json:"content"`
-	Tags    []string `json:"tags,omitempty"`
+	Title   string   `json:"title" validate:"required,max=100"`
+	Content string   `json:"content" validate:"required,max=5000"`
+	Tags    []string `json:"tags,omitempty" validate:"dive,required"`
 }
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -20,9 +20,13 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	var userID int64 = 1 // Placeholder for authenticated user ID
 
 	var post createPostPayload
-	err := readJSON(r, &post)
-	if err != nil {
+	if err := readJSON(r, &post); err != nil {
 		writeJSONError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validatorInstance.Struct(post); err != nil {
+		writeValidationError(w, err)
 		return
 	}
 
@@ -33,8 +37,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		Tags:    post.Tags,
 	}
 
-	err = app.store.Posts.Create(r.Context(), &postModel)
-	if err != nil {
+	if err := app.store.Posts.Create(r.Context(), &postModel); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
