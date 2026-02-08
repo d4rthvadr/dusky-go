@@ -1,6 +1,6 @@
 
 .DEFAULT_GOAL := help
-.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version seed
+.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version seed dev infra-up
 MIGRATION_DIR := ./migrations
 
 include .env
@@ -17,6 +17,15 @@ help: ## Show this help message
 	@echo "  migrate-force Force set migration version (usage: make migrate-force version=<version>)"
 	@echo "  migrate-version Show current migration version"
 	@echo "  seed         Seed the database with initial data"
+
+dev:
+	@air	
+
+infra-up: ## Start the infrastructure using Docker Compose
+	@docker-compose up 
+
+infra-down: ## Stop the infrastructure using Docker Compose
+	@docker-compose down	
 
 migrate: ## Create a new migration file (usage: make migrate name=<migration_name>)
 	@if [ -z "$(name)" ]; then echo "Usage: make migrate name=<migration_name>"; exit 1; fi
