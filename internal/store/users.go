@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	errCustom "github.com/d4rthvadr/dusky-go/internal/errors"
 	"github.com/d4rthvadr/dusky-go/internal/models"
 )
 
@@ -21,4 +22,22 @@ func (u *UserStore) Create(ctx context.Context, user *models.User) error {
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	return err
+}
+
+func (u *UserStore) GetByID(ctx context.Context, id int64) (*models.User, error) {
+
+	query := `
+	SELECT id, username, email, password_hash, created_at, updated_at
+	FROM users
+	WHERE id = $1
+	`
+	var user models.User
+	err := u.db.QueryRowContext(ctx, query, id).
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+
+	if err != nil {
+		return nil, errCustom.HandleStorageError(err)
+	}
+
+	return &user, nil
 }
