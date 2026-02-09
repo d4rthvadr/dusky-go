@@ -43,11 +43,14 @@ func (app *application) mount() *chi.Mux {
 		})
 
 		r.Route("/users", func(r chi.Router) {
-			r.Post("/", app.createPostHandler)
+			r.Post("/", app.createUserHandler)
 
 			r.Route("/{userID}", func(r chi.Router) {
 
+				r.Use(app.userContextMiddleware) // this will load the user and add it to the context for all the routes that match /users/{userID}/*
 				r.Get("/", app.getUserHandler)
+				r.Put("/follow", app.followUserHandler)
+				r.Put("/unfollow", app.unfollowUserHandler)
 			})
 		})
 
