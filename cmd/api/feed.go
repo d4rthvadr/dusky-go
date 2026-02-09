@@ -1,10 +1,20 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/d4rthvadr/dusky-go/internal/store"
+)
 
 func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Request) {
 
-	posts, err := app.store.Posts.GetUserFeed(r.Context(), 31)
+	query := store.NewPaginatedFeedQuery()
+	if err := query.Parse(r); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	posts, err := app.store.Posts.GetUserFeed(r.Context(), 31, query) // TODO: replace with actual user ID from context
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

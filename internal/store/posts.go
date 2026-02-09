@@ -100,7 +100,7 @@ func (p *PostStore) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (p *PostStore) GetUserFeed(ctx context.Context, userID int64) ([]*PostWithMetadata, error) {
+func (p *PostStore) GetUserFeed(ctx context.Context, userID int64, paginatedQuery *PaginatedFeedQuery) ([]*PostWithMetadata, error) {
 
 	query := `
 	SELECT 
@@ -113,13 +113,14 @@ func (p *PostStore) GetUserFeed(ctx context.Context, userID int64) ([]*PostWithM
 	join user_followers f on p.user_id = f.follower_id or p.user_id = $1
 	WHERE p.user_id = $1 or p.user_id = $1
 	GROUP BY p.id, u.username
-	ORDER BY p.created_at DESC
+	ORDER BY p.created_at DESC 
+	LIMIT $2 OFFSET $3
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
 	defer cancel()
 
-	rows, err := p.db.QueryContext(ctx, query, userID, userID)
+	rows, err := p.db.QueryContext(ctx, query, userID, paginatedQuery.Limit, paginatedQuery.Offset)
 
 	if err != nil {
 		return nil, errCustom.HandleStorageError(err)
