@@ -10,4 +10,5 @@ type Post struct {
 	CreatedAt string    `json:"created_at"`
 	UpdatedAt string    `json:"updated_at"`
 	Comments  []Comment `json:"comments,omitempty"`
+	User      User      `json:"user"`
 }

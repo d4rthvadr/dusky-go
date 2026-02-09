@@ -16,6 +16,7 @@ type Storage struct {
 		GetByID(context.Context, int64) (*models.Post, error)
 		Update(context.Context, *models.Post) error
 		Delete(context.Context, int64) error
+		GetUserFeed(context.Context, int64) ([]*PostWithMetadata, error)
 	}
 	Comments interface {
 		GetByPostID(context.Context, int64) ([]models.Comment, error)

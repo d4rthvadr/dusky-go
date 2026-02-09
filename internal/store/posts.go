@@ -13,6 +13,12 @@ type PostStore struct {
 	db *sql.DB
 }
 
+type PostWithMetadata struct {
+	models.Post
+	Username     string `json:"username"`
+	CommentCount int    `json:"comment_count"`
+}
+
 // Create inserts a new post into the database and updates the post model with the generated ID and timestamps
 func (p *PostStore) Create(ctx context.Context, post *models.Post) error {
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
@@ -92,4 +98,48 @@ func (p *PostStore) Delete(ctx context.Context, id int64) error {
 	}
 
 	return nil
+}
+
+func (p *PostStore) GetUserFeed(ctx context.Context, userID int64) ([]*PostWithMetadata, error) {
+
+	query := `
+	SELECT 
+		p.id, p.title, p.content, p.user_id, p.tags, u.username, 
+		count(c.id) as comments_count, 
+		p.created_at, p.updated_at
+	FROM posts p
+	left join comments c on p.id = c.post_id
+	left join users u on p.user_id = u.id
+	join user_followers f on p.user_id = f.follower_id or p.user_id = $1
+	WHERE p.user_id = $1 or p.user_id = $1
+	GROUP BY p.id, u.username
+	ORDER BY p.created_at DESC
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
+	rows, err := p.db.QueryContext(ctx, query, userID, userID)
+
+	if err != nil {
+		return nil, errCustom.HandleStorageError(err)
+	}
+	defer rows.Close()
+
+	var posts []*PostWithMetadata
+
+	for rows.Next() {
+		var post PostWithMetadata
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.UserID, pq.Array(&post.Tags), &post.User.Username, &post.CommentCount, &post.CreatedAt, &post.UpdatedAt)
+		if err != nil {
+			return nil, errCustom.HandleStorageError(err)
+		}
+		posts = append(posts, &PostWithMetadata{
+			Post:         post.Post,
+			Username:     post.User.Username,
+			CommentCount: post.CommentCount,
+		})
+	}
+
+	return posts, nil
 }
