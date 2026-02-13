@@ -14,7 +14,7 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	posts, err := app.store.Posts.GetUserFeed(r.Context(), 31, query) // TODO: replace with actual user ID from context
+	posts, err := app.store.Posts.GetUserFeed(r.Context(), 1, query) // TODO: replace with actual user ID from context
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

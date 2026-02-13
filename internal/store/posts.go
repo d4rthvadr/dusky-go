@@ -110,17 +110,19 @@ func (p *PostStore) GetUserFeed(ctx context.Context, userID int64, paginatedQuer
 	FROM posts p
 	left join comments c on p.id = c.post_id
 	left join users u on p.user_id = u.id
-	join user_followers f on p.user_id = f.follower_id or p.user_id = $1
-	WHERE p.user_id = $1 or p.user_id = $1
+	left join user_followers f on f.user_id = $1 and f.follower_id = p.user_id
+	WHERE (f.follower_id IS NOT NULL OR p.user_id = $1)
+	AND ($4 = '' OR p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%') 
+	AND (p.tags @> $5 OR $5 = '{}')
 	GROUP BY p.id, u.username
-	ORDER BY p.created_at DESC 
+	ORDER BY p.created_at ` + paginatedQuery.Sort + `
 	LIMIT $2 OFFSET $3
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
 	defer cancel()
 
-	rows, err := p.db.QueryContext(ctx, query, userID, paginatedQuery.Limit, paginatedQuery.Offset)
+	rows, err := p.db.QueryContext(ctx, query, userID, paginatedQuery.Limit, paginatedQuery.Offset, paginatedQuery.Search, pq.Array(paginatedQuery.Tags))
 
 	if err != nil {
 		return nil, errCustom.HandleStorageError(err)
