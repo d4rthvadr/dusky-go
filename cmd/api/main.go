@@ -11,6 +11,23 @@ import (
 
 const version = "1.0.0"
 
+//	@title			Dusky API
+//	@description	This is a sample server for a social media application called Dusky. It provides endpoints for managing users, posts, comments, and feeds.
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@BasePath	/api/v1
+
+//	@securityDefinitions.basic	BasicAuth
+
+// @externalDocs.description	OpenAPI
+// @externalDocs.url			https://swagger.io/resources/open-api/
 func main() {
 
 	err := godotenv.Load()
@@ -33,7 +50,8 @@ func main() {
 	store := store.NewStorage(db)
 
 	app := NewApplication(AppConfig{
-		addr: config.Server.Host,
+		addr:   config.Server.Host,
+		apiUrl: config.ApiUrl,
 	}, store, db)
 
 	mux := app.mount()

@@ -21,6 +21,9 @@ go.work
 bin/
 dist/
 
+# Generated documentation
+swagger/
+
 # IDE/Editor specific files
 .vscode/
 .idea/
