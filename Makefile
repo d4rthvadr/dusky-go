@@ -1,6 +1,6 @@
 
 .DEFAULT_GOAL := help
-.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version seed dev infra-up
+.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version seed dev infra-up infra-down gen-docs
 MIGRATION_DIR := ./migrations
 
 include .env
@@ -23,11 +23,18 @@ help: ## Show this help message
 dev:
 	@air	
 
+## Infrastructure targets
 infra-up: ## Start the infrastructure using Docker Compose
 	@docker-compose up 
 
 infra-down: ## Stop the infrastructure using Docker Compose
 	@docker-compose down	
+
+## Documentation targets
+gen-docs:
+	@swag init -g ./cmd/api/main.go -d . -o swagger && swag fmt
+
+## Migration targets	
 
 migrate: ## Create a new migration file (usage: make migrate name=<migration_name>)
 	@if [ -z "$(name)" ]; then echo "Usage: make migrate name=<migration_name>"; exit 1; fi
