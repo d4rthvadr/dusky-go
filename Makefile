@@ -16,6 +16,8 @@ help: ## Show this help message
 	@echo "  migrate-down Rollback the last migration"
 	@echo "  migrate-force Force set migration version (usage: make migrate-force version=<version>)"
 	@echo "  migrate-version Show current migration version"
+	@echo "  dev          Start the development server with live reload"
+	@echo "  infra-up      Start the infrastructure using Docker Compose"
 	@echo "  seed         Seed the database with initial data"
 
 dev:
