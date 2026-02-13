@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	env "github.com/d4rthvadr/dusky-go/internal/env"
+	env "github.com/d4rthvadr/dusky-go/internal/utils"
 )
 
 type ServerConfig struct {
