@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"encoding/json"
@@ -10,21 +10,17 @@ import (
 )
 
 func writeJSON(w http.ResponseWriter, status int, data any) error {
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(data)
 }
 
 func writeResponse(w http.ResponseWriter, status int, data any) error {
-
 	type envelope struct {
 		Data any `json:"data"`
 	}
 
-	return writeJSON(w, status, &envelope{
-		Data: data,
-	})
+	return writeJSON(w, status, &envelope{Data: data})
 }
 
 var validatorInstance *validator.Validate
@@ -34,33 +30,23 @@ func init() {
 }
 
 func writeJSONError(w http.ResponseWriter, status int, message string) error {
-
 	type envelope struct {
 		Error string `json:"error"`
 	}
 
-	data := envelope{
-		Error: message,
-	}
-
-	return writeJSON(w, status, data)
-
+	return writeJSON(w, status, envelope{Error: message})
 }
 
 func readJSON(r *http.Request, dst any) error {
-
-	maxBytes := 1_048_576 // 1 MB
+	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(nil, r.Body, int64(maxBytes))
 	decoder := json.NewDecoder(r.Body)
-
-	// Disallow unknown fields
 	decoder.DisallowUnknownFields()
 	return decoder.Decode(dst)
 }
 
-// formatValidationError converts validator errors into human-readable messages
 func formatValidationError(err error) map[string]string {
-	errors := make(map[string]string)
+	validationErrorsByField := make(map[string]string)
 
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
 		for _, fieldError := range validationErrors {
@@ -84,14 +70,13 @@ func formatValidationError(err error) map[string]string {
 				message = fmt.Sprintf("%s is invalid", fieldName)
 			}
 
-			errors[strings.ToLower(fieldName)] = message
+			validationErrorsByField[strings.ToLower(fieldName)] = message
 		}
 	}
 
-	return errors
+	return validationErrorsByField
 }
 
-// writeValidationError writes formatted validation errors as JSON
 func writeValidationError(w http.ResponseWriter, err error) error {
 	type envelope struct {
 		Error  string            `json:"error"`

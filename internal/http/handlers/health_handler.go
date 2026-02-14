@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"log"
@@ -15,16 +15,15 @@ import (
 //	@Success		200	{object}	map[string]string
 //	@Failure		500	{object}	error
 //	@Router			/health [get]
-func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-
+func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	data := map[string]string{
 		"status":  "ok",
-		"version": version,
+		"version": h.version,
 	}
 
 	if err := writeJSON(w, http.StatusOK, data); err != nil {
 		log.Print(err.Error())
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
 }

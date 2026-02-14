@@ -1,12 +1,11 @@
-package main
+package handlers
 
 import (
 	"errors"
 	"net/http"
 
-	"github.com/d4rthvadr/dusky-go/internal/models"
-
 	errCustom "github.com/d4rthvadr/dusky-go/internal/errors"
+	"github.com/d4rthvadr/dusky-go/internal/models"
 )
 
 type createPostPayload struct {
@@ -29,9 +28,8 @@ const PostIDKey string = "postID"
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/posts [post]
-func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
-
-	var userID int64 = 1 // Placeholder for authenticated user ID
+func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
+	var userID int64 = 1
 
 	var post createPostPayload
 	if err := readJSON(r, &post); err != nil {
@@ -51,16 +49,24 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		Tags:    post.Tags,
 	}
 
-	if err := app.store.Posts.Create(r.Context(), &postModel); err != nil {
-		app.internalServerError(w, r, err)
+	if err := h.store.Posts.Create(r.Context(), &postModel); err != nil {
+		h.internalServerError(w, r, err)
 		return
 	}
 
 	if err := writeResponse(w, http.StatusCreated, postModel); err != nil {
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
+}
 
+// getPostID extracts post ID from route params.
+func (h *Handler) getPostID(r *http.Request) (int64, error) {
+	postID, err := parseIDParam(r, PostIDKey)
+	if err != nil {
+		return 0, err
+	}
+	return postID, nil
 }
 
 // GetPost godoc
@@ -76,55 +82,30 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 //	@Failure		404		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/posts/{postID} [get]
-func (app *application) getPostID(r *http.Request) (int64, error) {
-	postID, err := parseIDParam(r, PostIDKey)
-	if err != nil {
-		return 0, err
-	}
-	return postID, nil
-}
-
-// DeletePost godoc
-//
-//	@Summary		Delete a post by ID
-//	@Description	Delete a post by its ID.
-//	@Tags			posts
-//	@Accept			json
-//	@Produce		json
-//	@Param			postID	path	int64	true	"Post ID"
-//	@Success		204		"No Content"
-//	@Failure		400		{object}	error
-//	@Failure		404		{object}	error
-//	@Failure		500		{object}	error
-//	@Router			/posts/{postID} [delete]
-func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
-
+func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	postID, err := app.getPostID(r)
+	postID, err := h.getPostID(r)
 	if err != nil {
-		app.badRequestError(w, r, err)
+		h.badRequestError(w, r, err)
 		return
 	}
 
-	post, err := app.store.Posts.GetByID(ctx, postID)
-
+	post, err := h.store.Posts.GetByID(ctx, postID)
 	if err != nil {
-
 		switch {
 		case errors.Is(err, errCustom.ErrResourceNotFound):
-			app.notFoundError(w, r, err)
+			h.notFoundError(w, r, err)
 			return
 		default:
-			app.internalServerError(w, r, err)
+			h.internalServerError(w, r, err)
 			return
 		}
-
 	}
 
-	comments, err := app.store.Comments.GetByPostID(ctx, postID)
+	comments, err := h.store.Comments.GetByPostID(ctx, postID)
 	if err != nil {
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
 
@@ -149,31 +130,27 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 //	@Failure		404		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/posts/{postID} [delete]
-func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
-
+func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	postID, err := app.getPostID(r)
+	postID, err := h.getPostID(r)
 	if err != nil {
-		app.badRequestError(w, r, err)
+		h.badRequestError(w, r, err)
 		return
 	}
 
-	if err := app.store.Posts.Delete(ctx, postID); err != nil {
-
+	if err := h.store.Posts.Delete(ctx, postID); err != nil {
 		switch {
 		case errors.Is(err, errCustom.ErrResourceNotFound):
-			app.notFoundError(w, r, err)
+			h.notFoundError(w, r, err)
 			return
 		default:
-			app.internalServerError(w, r, err)
+			h.internalServerError(w, r, err)
 			return
 		}
-
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-
 }
 
 // UpdatePost godoc
@@ -190,12 +167,12 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 //	@Failure		404		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/posts/{postID} [patch]
-func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	postID, err := app.getPostID(r)
+	postID, err := h.getPostID(r)
 	if err != nil {
-		app.badRequestError(w, r, err)
+		h.badRequestError(w, r, err)
 		return
 	}
 
@@ -217,20 +194,19 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		Tags:    payload.Tags,
 	}
 
-	if err := app.store.Posts.Update(ctx, &postModel); err != nil {
+	if err := h.store.Posts.Update(ctx, &postModel); err != nil {
 		switch {
 		case errors.Is(err, errCustom.ErrResourceNotFound):
-			app.notFoundError(w, r, err)
+			h.notFoundError(w, r, err)
 			return
 		default:
-			app.internalServerError(w, r, err)
+			h.internalServerError(w, r, err)
 			return
 		}
 	}
 
 	if err := writeResponse(w, http.StatusOK, postModel); err != nil {
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
-
 }

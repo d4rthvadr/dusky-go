@@ -1,9 +1,8 @@
-package main
+package handlers
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/d4rthvadr/dusky-go/internal/models"
@@ -20,9 +19,7 @@ type followUserPayload struct {
 	UserID int64 `json:"userId" validate:"required"`
 }
 
-const UserContextKey string = "user"
-
-// UserIDKey is the key used to extract the user ID from the URL parameters.
+const userContextKey string = "user"
 const UserIDKey string = "userID"
 
 // CreateUser godoc
@@ -37,8 +34,7 @@ const UserIDKey string = "userID"
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/users [post]
-func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request) {
-
+func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user createUserPayload
 	if err := readJSON(r, &user); err != nil {
 		writeJSONError(w, http.StatusBadRequest, err.Error())
@@ -61,16 +57,15 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 		Password: user.Password,
 	}
 
-	if err := app.store.Users.Create(r.Context(), &userModel); err != nil {
-		app.internalServerError(w, r, err)
+	if err := h.store.Users.Create(r.Context(), &userModel); err != nil {
+		h.internalServerError(w, r, err)
 		return
 	}
 
 	if err := writeResponse(w, http.StatusCreated, userModel); err != nil {
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
-
 }
 
 // GetUser godoc
@@ -86,19 +81,17 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 //	@Failure		500		{object}	error
 //	@Router			/users/{userID} [get]
 //	@Security		ApiKeyAuth
-func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
-
+func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	user, ok := getUserFromContext(r.Context())
 	if !ok {
-		fmt.Println("user not found in context")
-		app.internalServerError(w, r, errors.New("user not found in request context"))
+		h.internalServerError(w, r, errors.New("user not found in request context"))
 		return
 	}
 
-	user.Password = "" // Clear the password before sending the response
+	user.Password = ""
 
 	if err := writeResponse(w, http.StatusOK, user); err != nil {
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
 }
@@ -118,10 +111,10 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500		{object}	error				"Internal Server Error"
 //	@Router			/users/{userID}/follow [put]
 //	@Security		ApiKeyAuth
-func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	var payload followUserPayload
 	if err := readJSON(r, &payload); err != nil {
-		app.badRequestError(w, r, err)
+		h.badRequestError(w, r, err)
 		return
 	}
 
@@ -132,14 +125,12 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 	user, ok := getUserFromContext(r.Context())
 	if !ok {
-		fmt.Println("user not found in context")
-		app.internalServerError(w, r, errors.New("user not found in request context"))
+		h.internalServerError(w, r, errors.New("user not found in request context"))
 		return
 	}
 
-	if err := app.store.Followers.Follow(r.Context(), user.ID, payload.UserID); err != nil {
-
-		app.internalServerError(w, r, err)
+	if err := h.store.Followers.Follow(r.Context(), user.ID, payload.UserID); err != nil {
+		h.internalServerError(w, r, err)
 		return
 	}
 
@@ -161,57 +152,47 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 //	@Failure		500		{object}	error				"Internal Server Error"
 //	@Router			/users/{userID}/unfollow [put]
 //	@Security		ApiKeyAuth
-func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	var payload followUserPayload
 	if err := readJSON(r, &payload); err != nil {
-		app.badRequestError(w, r, err)
+		h.badRequestError(w, r, err)
 		return
 	}
 
 	user, ok := getUserFromContext(r.Context())
 	if !ok {
-		fmt.Println("user not found in context")
-		app.internalServerError(w, r, errors.New("user not found in request context"))
+		h.internalServerError(w, r, errors.New("user not found in request context"))
 		return
 	}
 
-	if err := app.store.Followers.Unfollow(r.Context(), user.ID, payload.UserID); err != nil {
-		app.internalServerError(w, r, err)
+	if err := h.store.Followers.Unfollow(r.Context(), user.ID, payload.UserID); err != nil {
+		h.internalServerError(w, r, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// userContextMiddleware is a middleware that loads the user from the database based on the user ID in the URL and adds it to the request context for all routes that match /users/{userID}/*
-func (app *application) userContextMiddleware(next http.Handler) http.Handler {
-
+func (h *Handler) UserContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		userID, err := parseIDParam(r, UserIDKey)
-
 		if err != nil {
-
-			app.badRequestError(w, r, errors.New("invalid user ID"))
+			h.badRequestError(w, r, errors.New("invalid user ID"))
 			return
 		}
 
-		// Retrieve the user from the database using the user ID
-		// this works for small(less traffic) apps, but for larger apps, we need to lazy load user when its actually needed
-		// or construct a callback rather to be called by the handler
-		user, err := app.store.Users.GetByID(r.Context(), userID)
+		user, err := h.store.Users.GetByID(r.Context(), userID)
 		if err != nil {
-			app.badRequestError(w, r, err)
+			h.badRequestError(w, r, err)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), UserContextKey, user)
+		ctx := context.WithValue(r.Context(), userContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func getUserFromContext(ctx context.Context) (*models.User, bool) {
-
-	user, ok := ctx.Value(UserContextKey).(*models.User)
+	user, ok := ctx.Value(userContextKey).(*models.User)
 	return user, ok
 }

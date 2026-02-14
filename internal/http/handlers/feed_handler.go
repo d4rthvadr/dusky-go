@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"net/http"
@@ -23,17 +23,16 @@ import (
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/feed [get]
-func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Request) {
-
+func (h *Handler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 	query := store.NewPaginatedFeedQuery()
 	if err := query.Parse(r); err != nil {
-		app.badRequestError(w, r, err)
+		h.badRequestError(w, r, err)
 		return
 	}
 
-	posts, err := app.store.Posts.GetUserFeed(r.Context(), 1, query) // TODO: replace with actual user ID from context
+	posts, err := h.store.Posts.GetUserFeed(r.Context(), 1, query)
 	if err != nil {
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
 
@@ -49,9 +48,7 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 		UpdatedAt    string   `json:"updatedAt"`
 	}
 
-	// Map the posts to the response format
-
-	var response []PostResponse
+	response := make([]PostResponse, 0, len(posts))
 	for _, post := range posts {
 		response = append(response, PostResponse{
 			ID:           post.ID,
@@ -67,7 +64,7 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := writeResponse(w, http.StatusOK, response); err != nil {
-		app.internalServerError(w, r, err)
+		h.internalServerError(w, r, err)
 		return
 	}
 }
