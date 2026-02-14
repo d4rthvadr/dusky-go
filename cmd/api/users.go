@@ -16,12 +16,27 @@ type createUserPayload struct {
 	ConfirmPassword string `json:"confirm_password" validate:"required,eqfield=Password"`
 }
 
+type followUserPayload struct {
+	UserID int64 `json:"userId" validate:"required"`
+}
+
 const UserContextKey string = "user"
 
 // UserIDKey is the key used to extract the user ID from the URL parameters.
 const UserIDKey string = "userID"
 
-// createUserHandler handles the creation of a new user. It reads the user data from the request body,
+// CreateUser godoc
+//
+//	@Summary		Create a new user
+//	@Description	Create a new user with the provided username, email, and password.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			user	body		createUserPayload	true	"User payload"
+//	@Success		201		{object}	models.User
+//	@Failure		400		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/users [post]
 func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user createUserPayload
@@ -58,13 +73,25 @@ func (app *application) createUserHandler(w http.ResponseWriter, r *http.Request
 
 }
 
-// getUserHandler retrieves a user by their ID from the URL and returns it as JSON.
+// GetUser godoc
+//
+//	@Summary		Get a user by ID
+//	@Description	Retrieve a user by their ID from the URL and returns it as JSON.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path		int64	true	"User ID"
+//	@Success		200		{object}	models.User
+//	@Failure		400		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/users/{userID} [get]
+//	@Security		ApiKeyAuth
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, ok := getUserFromContext(r.Context())
 	if !ok {
 		fmt.Println("user not found in context")
-		app.internalServerError(w, r, nil)
+		app.internalServerError(w, r, errors.New("user not found in request context"))
 		return
 	}
 
@@ -76,14 +103,23 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// FollowUser godoc
+//
+//	@Summary		Follow a user by ID
+//	@Description	Follow a user by their ID from the URL
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path		int64				true	"User ID"
+//	@Param			payload	body		followUserPayload	true	"Follower payload"
+//	@Success		204		{string}	string				""
+//	@Failure		400		{object}	error				"Bad Request"
+//	@failure		404		{object}	error				"User not found"
+//	@Failure		500		{object}	error				"Internal Server Error"
+//	@Router			/users/{userID}/follow [put]
+//	@Security		ApiKeyAuth
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
-
-	type FollowUser struct {
-		UserID int64 `json:"userId" validate:"required"`
-	}
-
-	// Get the authenticated user from the context instead
-	var payload FollowUser
+	var payload followUserPayload
 	if err := readJSON(r, &payload); err != nil {
 		app.badRequestError(w, r, err)
 		return
@@ -94,12 +130,10 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fmt.Println("here", payload.UserID)
-
 	user, ok := getUserFromContext(r.Context())
 	if !ok {
 		fmt.Println("user not found in context")
-		app.internalServerError(w, r, nil)
+		app.internalServerError(w, r, errors.New("user not found in request context"))
 		return
 	}
 
@@ -111,12 +145,24 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// UnfollowUser godoc
+//
+//	@Summary		Unfollow a user by ID
+//	@Description	Unfollow a user by their ID from the URL
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path		int64				true	"User ID"
+//	@Param			payload	body		followUserPayload	true	"Follower payload"
+//	@Success		204		{string}	string				""
+//	@Failure		400		{object}	error				"Bad Request"
+//	@failure		404		{object}	error				"User not found"
+//	@Failure		500		{object}	error				"Internal Server Error"
+//	@Router			/users/{userID}/unfollow [put]
+//	@Security		ApiKeyAuth
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	type FollowUser struct {
-		UserID int64 `json:"userId" validate:"required"`
-	}
-	// Get the authenticated user from the context instead
-	var payload FollowUser
+	var payload followUserPayload
 	if err := readJSON(r, &payload); err != nil {
 		app.badRequestError(w, r, err)
 		return
@@ -125,7 +171,7 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 	user, ok := getUserFromContext(r.Context())
 	if !ok {
 		fmt.Println("user not found in context")
-		app.internalServerError(w, r, nil)
+		app.internalServerError(w, r, errors.New("user not found in request context"))
 		return
 	}
 
@@ -137,6 +183,7 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// userContextMiddleware is a middleware that loads the user from the database based on the user ID in the URL and adds it to the request context for all routes that match /users/{userID}/*
 func (app *application) userContextMiddleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

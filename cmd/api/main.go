@@ -22,12 +22,12 @@ const version = "1.0.0"
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
-//	@BasePath	/api/v1
+//	@BasePath	/v1
 
-//	@securityDefinitions.basic	BasicAuth
-
-// @externalDocs.description	OpenAPI
-// @externalDocs.url			https://swagger.io/resources/open-api/
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
+// @description				Provide your API key in the Authorization header as follows: "Bearer {your_api_key}"
 func main() {
 
 	err := godotenv.Load()

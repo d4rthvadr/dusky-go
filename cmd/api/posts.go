@@ -17,6 +17,18 @@ type createPostPayload struct {
 
 const PostIDKey string = "postID"
 
+// CreatePost godoc
+//
+//	@Summary		Create a new post
+//	@Description	Create a new post with the provided title, content, and tags.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			post	body		createPostPayload	true	"Post payload"
+//	@Success		201		{object}	models.Post
+//	@Failure		400		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/posts [post]
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	var userID int64 = 1 // Placeholder for authenticated user ID
@@ -51,6 +63,19 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 }
 
+// GetPost godoc
+//
+//	@Summary		Get a post by ID
+//	@Description	Get a post by its ID, including its comments.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int64	true	"Post ID"
+//	@Success		200		{object}	models.Post
+//	@Failure		400		{object}	error
+//	@Failure		404		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/posts/{postID} [get]
 func (app *application) getPostID(r *http.Request) (int64, error) {
 	postID, err := parseIDParam(r, PostIDKey)
 	if err != nil {
@@ -59,6 +84,19 @@ func (app *application) getPostID(r *http.Request) (int64, error) {
 	return postID, nil
 }
 
+// DeletePost godoc
+//
+//	@Summary		Delete a post by ID
+//	@Description	Delete a post by its ID.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path	int64	true	"Post ID"
+//	@Success		204		"No Content"
+//	@Failure		400		{object}	error
+//	@Failure		404		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/posts/{postID} [delete]
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
@@ -98,6 +136,19 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeletePost godoc
+//
+//	@Summary		Delete a post by ID
+//	@Description	Delete a post by its ID.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path	int64	true	"Post ID"
+//	@Success		204		"No Content"
+//	@Failure		400		{object}	error
+//	@Failure		404		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/posts/{postID} [delete]
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
@@ -125,6 +176,20 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 
 }
 
+// UpdatePost godoc
+//
+//	@Summary		Update a post by ID
+//	@Description	Update a post's title, content, and tags by its ID.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int64				true	"Post ID"
+//	@Param			post	body		createPostPayload	true	"Updated post payload"
+//	@Success		200		{object}	models.Post
+//	@Failure		400		{object}	error
+//	@Failure		404		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/posts/{postID} [patch]
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
