@@ -32,7 +32,11 @@ infra-down: ## Stop the infrastructure using Docker Compose
 
 ## Documentation targets
 gen-docs:
-	@swag init -g ./cmd/api/main.go -d . -o swagger && swag fmt
+	@swag init -g ./cmd/api/main.go -d .,internal -o swagger && swag fmt
+
+## Format swagger docs
+format-docs:
+	@swag fmt -d ./swagger	
 
 ## Migration targets	
 

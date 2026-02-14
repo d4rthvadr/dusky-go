@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/store"
@@ -36,7 +38,8 @@ func (app *application) mount() *chi.Mux {
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheckHandler)
 
-		docsUrl := fmt.Sprintf("%s/swagger/doc.json", app.config.apiUrl)
+		apiURL := strings.TrimRight(app.config.apiUrl, "/")
+		docsUrl := fmt.Sprintf("%s/swagger/doc.json", apiURL)
 
 		r.Get("/swagger/*", httpSwagger.Handler((httpSwagger.URL(docsUrl))))
 
@@ -78,9 +81,22 @@ func (app *application) Run(mux *chi.Mux) error {
 	swaggerDocs.SwaggerInfo.Title = "Dusky API"
 	swaggerDocs.SwaggerInfo.Description = "This is a sample server for a social media application called Dusky. It provides endpoints for managing users, posts, comments, and feeds."
 	swaggerDocs.SwaggerInfo.Version = version
-	swaggerDocs.SwaggerInfo.Host = app.config.addr
+	swaggerHost := app.config.addr
+	swaggerSchemes := []string{"http"}
+
+	if parsedAPIURL, err := url.Parse(app.config.apiUrl); err == nil {
+		if parsedAPIURL.Host != "" {
+			swaggerHost = parsedAPIURL.Host
+		}
+
+		if parsedAPIURL.Scheme != "" {
+			swaggerSchemes = []string{parsedAPIURL.Scheme}
+		}
+	}
+
+	swaggerDocs.SwaggerInfo.Host = swaggerHost
 	swaggerDocs.SwaggerInfo.BasePath = "/v1"
-	swaggerDocs.SwaggerInfo.Schemes = []string{"http", "https"}
+	swaggerDocs.SwaggerInfo.Schemes = swaggerSchemes
 
 	srv := http.Server{
 		Addr:         ":" + app.config.addr,
