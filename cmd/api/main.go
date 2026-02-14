@@ -6,6 +6,7 @@ import (
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/store"
+	"github.com/d4rthvadr/dusky-go/internal/utils"
 	"github.com/joho/godotenv"
 )
 
@@ -31,28 +32,32 @@ const version = "1.0.0"
 func main() {
 
 	err := godotenv.Load()
+	logger := utils.NewLogger()
+	defer logger.Sync()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		logger.Fatal("Error loading .env file")
 	}
 
 	config, err := config.InitializeConfig()
 	if err != nil {
-		log.Fatal("Error initializing config:", err)
+		logger.Fatal("Error initializing config:", err)
 	}
 
 	db, err := db.New(config.Db.Addr, config.Db.MaxOpenConns, config.Db.MaxIdleConns, config.Db.MaxIdleTime)
 	if err != nil {
-		log.Panic("Error connecting to the database:", err)
+		logger.Panic("Error connecting to the database:", err)
 	}
 
 	defer db.Close()
 
 	store := store.NewStorage(db)
 
-	app := NewApplication(AppConfig{
+	appConfig := AppConfig{
 		addr:   config.Server.Host,
 		apiUrl: config.ApiUrl,
-	}, store, db)
+	}
+
+	app := NewApplication(appConfig, store, db, logger)
 
 	mux := app.mount()
 

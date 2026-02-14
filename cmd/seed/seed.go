@@ -5,12 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"log"
 	mrand "math/rand"
 
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/models"
+	"github.com/d4rthvadr/dusky-go/internal/utils"
 
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/joho/godotenv"
@@ -28,28 +28,32 @@ var fakeUsernames = []string{
 func main() {
 
 	err := godotenv.Load()
+	logger := utils.NewLogger()
+	defer logger.Sync()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		logger.Fatal("Error loading .env file")
 	}
 
 	config, err := config.InitializeConfig()
 	if err != nil {
-		log.Fatal("Error initializing config:", err)
+		logger.Fatal("Error initializing config:", err)
 	}
 
 	db, err := db.New(config.Db.Addr, config.Db.MaxOpenConns, config.Db.MaxIdleConns, config.Db.MaxIdleTime)
 	if err != nil {
-		log.Panic("Error connecting to the database:", err)
+		logger.Panic("Error connecting to the database:", err)
 	}
 
 	store := store.NewStorage(db)
 	if err = Seed(store); err != nil {
-		fmt.Println("Error seeding data:", err)
+		logger.Fatal("Error seeding data:", err)
 	}
 }
 
 func Seed(store store.Storage) error {
-	fmt.Println("seeding...")
+	logger := utils.NewLogger()
+	defer logger.Sync()
+	logger.Info("seeding...")
 	ctx := context.Background()
 
 	users := generateUsers(3)
