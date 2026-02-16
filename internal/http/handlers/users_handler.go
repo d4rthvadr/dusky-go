@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/models"
 )
@@ -35,29 +36,34 @@ const UserIDKey string = "userID"
 //	@Failure		500		{object}	error
 //	@Router			/users [post]
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user createUserPayload
-	if err := readJSON(r, &user); err != nil {
+	var createUser createUserPayload
+	if err := readJSON(r, &createUser); err != nil {
 		writeJSONError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := validatorInstance.Struct(user); err != nil {
+	if err := validatorInstance.Struct(createUser); err != nil {
 		writeValidationError(w, err)
 		return
 	}
 
-	if user.Password != user.ConfirmPassword {
+	if createUser.Password != createUser.ConfirmPassword {
 		writeJSONError(w, http.StatusBadRequest, "passwords do not match")
 		return
 	}
 
 	userModel := models.User{
-		Username: user.Username,
-		Email:    user.Email,
-		Password: user.Password,
+		Username: createUser.Username,
+		Email:    createUser.Email,
 	}
 
-	if err := h.store.Users.Create(r.Context(), &userModel); err != nil {
+	// hash the password before saving to the database
+	if err := userModel.Password.Set(createUser.Password); err != nil {
+		h.internalServerError(w, r, err)
+		return
+	}
+
+	if err := h.store.Users.CreateAndInvite(r.Context(), &userModel, "some-token", time.Hour*24); err != nil {
 		h.internalServerError(w, r, err)
 		return
 	}
@@ -87,8 +93,6 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		h.internalServerError(w, r, errors.New("user not found in request context"))
 		return
 	}
-
-	user.Password = ""
 
 	if err := writeResponse(w, http.StatusOK, user); err != nil {
 		h.internalServerError(w, r, err)

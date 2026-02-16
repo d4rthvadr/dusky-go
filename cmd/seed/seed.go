@@ -6,11 +6,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	mrand "math/rand"
+	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/models"
 	"github.com/d4rthvadr/dusky-go/internal/utils"
+	"github.com/google/uuid"
 
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/joho/godotenv"
@@ -61,8 +63,9 @@ func Seed(store store.Storage) error {
 	userIds := make([]int64, len(users))
 
 	for index, user := range users {
-		if err := store.Users.Create(ctx, &user); err != nil {
-			return fmt.Errorf("error creating user: %w", err)
+		err := store.Users.CreateAndInvite(ctx, &user, uuid.New().String(), time.Hour*24)
+		if err != nil {
+			return fmt.Errorf("error creating and inviting user: %w", err)
 		}
 		userIds[index] = user.ID
 	}
@@ -99,8 +102,9 @@ func generateUsers(count int) []models.User {
 		users[i] = models.User{
 			Username: username,
 			Email:    fmt.Sprintf("user_%s@example.com", username),
-			Password: "password123",
 		}
+
+		users[i].Password.Set("password123")
 	}
 	return users
 }

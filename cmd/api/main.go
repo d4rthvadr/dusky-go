@@ -57,7 +57,9 @@ func main() {
 		apiUrl: config.ApiUrl,
 	}
 
-	app := NewApplication(appConfig, store, db, logger)
+	mailConfig := config.Mail
+
+	app := NewApplication(appConfig, store, db, logger, mailConfig)
 
 	mux := app.mount()
 

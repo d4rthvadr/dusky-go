@@ -23,17 +23,14 @@ type Storage struct {
 		Create(context.Context, *models.Comment) error
 	}
 	Users interface {
-		Create(context.Context, *models.User) error
+		Create(context.Context, *sql.Tx, *models.User) error
 		GetByID(context.Context, int64) (*models.User, error)
+		CreateAndInvite(context.Context, *models.User, string, time.Duration) error
 	}
 	Followers interface {
 		Follow(context.Context, int64, int64) error
 		Unfollow(context.Context, int64, int64) error
 	}
-}
-
-type PostgresStorage struct {
-	db *sql.DB
 }
 
 func NewStorage(db *sql.DB) Storage {

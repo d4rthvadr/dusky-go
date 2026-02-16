@@ -42,6 +42,12 @@ func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 			r.Group(func(r chi.Router) {
 				r.Get("/feed", handler.GetUserFeed)
 			})
+
+			// Public routes
+			r.Route("/auth", func(r chi.Router) {
+				r.Post("/user", handler.RegisterUser)
+
+			})
 		})
 	})
 }
