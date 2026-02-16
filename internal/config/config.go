@@ -19,9 +19,13 @@ type DbConfig struct {
 	MaxIdleTime  time.Duration
 }
 
+type MailConfig struct {
+	Expiry time.Duration
+}
 type AppConfig struct {
 	Server ServerConfig
 	Db     DbConfig
+	Mail   MailConfig
 	ApiUrl string
 }
 
@@ -33,6 +37,7 @@ func InitializeConfig() (*AppConfig, error) {
 	maxIdleConns := env.GetEnvAsInt("DB_MAX_IDLE_CONNS", 30)
 	maxIdleTime := env.GetEnvAsDuration("DB_MAX_IDLE_TIME", time.Minute*15)
 	apiUrl := env.GetEnv("API_URL", fmt.Sprintf("http://localhost:%s/v1", serverAddr))
+	mailExpiry := env.GetEnvAsDuration("MAIL_EXPIRY", time.Hour*24)
 
 	config := &AppConfig{
 		Server: ServerConfig{
@@ -45,6 +50,9 @@ func InitializeConfig() (*AppConfig, error) {
 			MaxIdleTime:  maxIdleTime,
 		},
 		ApiUrl: apiUrl,
+		Mail: MailConfig{
+			Expiry: mailExpiry,
+		},
 	}
 	return config, nil
 }

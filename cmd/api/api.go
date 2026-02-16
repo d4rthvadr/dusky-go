@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/d4rthvadr/dusky-go/internal/config"
 	apphttp "github.com/d4rthvadr/dusky-go/internal/http"
 	"github.com/d4rthvadr/dusky-go/internal/http/handlers"
 	"github.com/d4rthvadr/dusky-go/internal/store"
@@ -77,6 +78,6 @@ func (app *application) Run(mux *chi.Mux) error {
 	return srv.ListenAndServe()
 }
 
-func NewApplication(config AppConfig, store store.Storage, db *sql.DB, logger utils.Logger) *application {
-	return &application{config: config, store: store, db: db, logger: logger, handler: handlers.New(store, version, logger)}
+func NewApplication(config AppConfig, store store.Storage, db *sql.DB, logger utils.Logger, mailConfig config.MailConfig) *application {
+	return &application{config: config, store: store, db: db, logger: logger, handler: handlers.New(store, version, logger, mailConfig)}
 }
