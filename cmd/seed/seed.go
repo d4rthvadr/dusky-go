@@ -3,16 +3,15 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	mrand "math/rand"
-	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/models"
 	"github.com/d4rthvadr/dusky-go/internal/utils"
-	"github.com/google/uuid"
 
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/joho/godotenv"
@@ -47,12 +46,12 @@ func main() {
 	}
 
 	store := store.NewStorage(db)
-	if err = Seed(store); err != nil {
+	if err = Seed(store, db); err != nil {
 		logger.Fatal("Error seeding data:", err)
 	}
 }
 
-func Seed(store store.Storage) error {
+func Seed(store store.Storage, db *sql.DB) error {
 	logger := utils.NewLogger()
 	defer logger.Sync()
 	logger.Info("seeding...")
@@ -62,14 +61,19 @@ func Seed(store store.Storage) error {
 
 	userIds := make([]int64, len(users))
 
+	tx, _ := db.BeginTx(ctx, nil)
+
 	for index, user := range users {
-		err := store.Users.CreateAndInvite(ctx, &user, uuid.New().String(), time.Hour*24)
+		err := store.Users.Create(ctx, tx, &user)
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error creating and inviting user: %w", err)
 		}
 		userIds[index] = user.ID
 	}
-
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("error committing transaction: %w", err)
+	}
 	posts := generatePosts(200, userIds)
 
 	for _, post := range posts {
