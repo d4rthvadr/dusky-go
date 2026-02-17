@@ -26,6 +26,7 @@ type Storage struct {
 		Create(context.Context, *sql.Tx, *models.User) error
 		GetByID(context.Context, int64) (*models.User, error)
 		CreateAndInvite(context.Context, *models.User, string, time.Duration) error
+		ActivateUser(context.Context, string) error
 	}
 	Followers interface {
 		Follow(context.Context, int64, int64) error

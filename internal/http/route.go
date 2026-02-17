@@ -30,7 +30,8 @@ func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 		})
 
 		r.Route("/users", func(r chi.Router) {
-			r.Post("/", handler.CreateUser)
+
+			r.Put("/activate/{token}", handler.ActivateUserHandler)
 
 			r.Route("/{userID}", func(r chi.Router) {
 				r.Use(handler.UserContextMiddleware)
@@ -43,11 +44,12 @@ func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 				r.Get("/feed", handler.GetUserFeed)
 			})
 
-			// Public routes
-			r.Route("/auth", func(r chi.Router) {
-				r.Post("/user", handler.RegisterUser)
+		})
 
-			})
+		// Public routes
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/register", handler.RegisterUser)
+
 		})
 	})
 }

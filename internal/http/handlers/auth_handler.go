@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"time"
 
@@ -17,6 +15,11 @@ type RegisterUserPayload struct {
 	ConfirmPassword string `json:"confirm_password" validate:"required,eqfield=Password"`
 }
 
+type UserInvitationWithToken struct {
+	models.User
+	Token string `json:"token"`
+}
+
 // RegisterUser godoc
 //
 //	@Summary		Register a new user
@@ -25,7 +28,7 @@ type RegisterUserPayload struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			user	body		RegisterUserPayload	true	"User payload"
-//	@Success		201		{object}	models.User
+//	@Success		201		{object}	UserInvitationWithToken
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
 //	@Router			/auth/register [post]
@@ -64,15 +67,13 @@ func (h *Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := writeResponse(w, http.StatusCreated, userModel); err != nil {
+	// TODO: send email
+
+	if err := writeResponse(w, http.StatusCreated, UserInvitationWithToken{
+		User:  userModel,
+		Token: plainToken,
+	}); err != nil {
 		h.internalServerError(w, r, err)
 		return
 	}
-}
-
-// hashAndEncodeToken takes a plain token string and returns its SHA-256 hash as a hexadecimal string
-func hashAndEncodeToken(token string) string {
-	hash := sha256.Sum256([]byte(token))
-	return hex.EncodeToString(hash[:])
-
 }

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	errCustom "github.com/d4rthvadr/dusky-go/internal/errors"
@@ -11,6 +12,83 @@ import (
 
 type UserStore struct {
 	db *sql.DB
+}
+
+func (u *UserStore) ActivateUser(ctx context.Context, token string) error {
+
+	return WithTx(ctx, u.db, func(tx *sql.Tx) error {
+
+		var user models.User
+
+		fmt.Printf("Activating user with token %s\n", token)
+
+		// find the user invitation by token, if not found return an error
+		getUserFromInvitationErr := u.getUserFromInvitation(ctx, tx, token, &user)
+		if getUserFromInvitationErr != nil {
+			return getUserFromInvitationErr
+		}
+
+		// update the user to set is_active to true
+		user.IsActive = true
+
+		if err := u.Update(ctx, tx, &user); err != nil {
+			return err
+		}
+
+		if err := u.deleteUserInvitation(ctx, tx, user.ID); err != nil {
+			return err
+		}
+
+		return nil
+
+	})
+
+}
+
+func (u *UserStore) Update(ctx context.Context, tx *sql.Tx, user *models.User) error {
+
+	query := `
+	UPDATE users 
+	SET username = $1, email = $2,  activated = $3, updated_at = now()
+	WHERE id = $4
+	RETURNING updated_at
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
+	err := tx.QueryRowContext(ctx, query, user.Username, user.Email, user.IsActive, user.ID).
+		Scan(&user.UpdatedAt)
+
+	return errCustom.HandleStorageError(err)
+}
+
+func (u *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token string, user *models.User) error {
+
+	query := `
+	SELECT u.id, u.username, u.email, u.created_at, u.activated
+	FROM users u
+	JOIN user_invitations ui ON u.id = ui.user_id
+	WHERE ui.token = $1 AND ui.expires_at > now()
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
+	err := u.db.QueryRowContext(ctx, query, token).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &user.IsActive)
+
+	fmt.Printf("we are here %v %v \n", user, err)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return errCustom.ErrResourceNotFound
+		default:
+			return errCustom.HandleStorageError(err)
+		}
+	}
+
+	return nil
+
 }
 
 func (u *UserStore) Create(ctx context.Context, tx *sql.Tx, user *models.User) error {
@@ -23,7 +101,7 @@ func (u *UserStore) Create(ctx context.Context, tx *sql.Tx, user *models.User) e
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
 	defer cancel()
 
-	err := tx.QueryRowContext(ctx, query, user.Username, user.Email, user.Password).
+	err := tx.QueryRowContext(ctx, query, user.Username, user.Email, user.Password.Hash).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	//TODO: handle sql.Errors to user like duplicate email or username, not found, etc
@@ -61,6 +139,7 @@ func (u *UserStore) createUserInvitation(ctx context.Context, tx *sql.Tx, userId
 	VALUES ($1, $2, $3)
 	`
 
+	fmt.Printf("Creating user invitation for user ID %d with token %s and expiry %s\n", userId, token, expiry)
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
 	defer cancel()
 
@@ -71,9 +150,24 @@ func (u *UserStore) createUserInvitation(ctx context.Context, tx *sql.Tx, userId
 	return errCustom.HandleStorageError(err)
 }
 
+func (u *UserStore) deleteUserInvitation(ctx context.Context, tx *sql.Tx, userID int64) error {
+
+	query := `
+	DELETE FROM user_invitations 
+	WHERE user_id = $1 
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
+	_, err := tx.ExecContext(ctx, query, userID)
+
+	return errCustom.HandleStorageError(err)
+}
+
 func (u *UserStore) CreateAndInvite(ctx context.Context, user *models.User, token string, invitationExpiry time.Duration) error {
 
-	return WitTx(ctx, u.db, func(tx *sql.Tx) error {
+	return WithTx(ctx, u.db, func(tx *sql.Tx) error {
 
 		if err := u.Create(ctx, tx, user); err != nil {
 			return err

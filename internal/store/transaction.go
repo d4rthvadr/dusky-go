@@ -7,7 +7,7 @@ import (
 )
 
 // WitTx is a helper function that wraps the execution of a function within a database transaction.
-func WitTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
+func WithTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) error {
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/models"
+	"github.com/go-chi/chi/v5"
 )
 
 type createUserPayload struct {
@@ -175,6 +176,42 @@ func (h *Handler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ActivateUserHandler godoc
+//
+//	@Summary		Activate a user account
+//	@Description	Activate a user account using the provided activation token.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			token	path		string	true	"Activation token"
+//	@Success		200		{string}	string	"Account activated successfully"
+//	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		500		{object}	error	"Internal Server Error"
+//	@Router			/users/activate/{token} [put]
+func (h *Handler) ActivateUserHandler(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	if token == "" {
+		writeJSONError(w, http.StatusBadRequest, "activation token is required")
+		return
+	}
+
+	hashedToken := hashAndEncodeToken(token)
+
+	err := h.store.Users.ActivateUser(r.Context(), hashedToken)
+	if err != nil {
+		h.internalServerError(w, r, err)
+		return
+
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	if err := writeResponse(w, http.StatusOK, map[string]string{"message": "Account activated successfully"}); err != nil {
+		h.internalServerError(w, r, err)
+		return
+	}
 }
 
 func (h *Handler) UserContextMiddleware(next http.Handler) http.Handler {
