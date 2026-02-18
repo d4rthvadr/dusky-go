@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	errCustom "github.com/d4rthvadr/dusky-go/internal/errors"
@@ -19,8 +18,6 @@ func (u *UserStore) ActivateUser(ctx context.Context, token string) error {
 	return WithTx(ctx, u.db, func(tx *sql.Tx) error {
 
 		var user models.User
-
-		fmt.Printf("Activating user with token %s\n", token)
 
 		// find the user invitation by token, if not found return an error
 		getUserFromInvitationErr := u.getUserFromInvitation(ctx, tx, token, &user)
@@ -77,7 +74,6 @@ func (u *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token
 
 	err := u.db.QueryRowContext(ctx, query, token).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &user.IsActive)
 
-	fmt.Printf("we are here %v %v \n", user, err)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -139,7 +135,6 @@ func (u *UserStore) createUserInvitation(ctx context.Context, tx *sql.Tx, userId
 	VALUES ($1, $2, $3)
 	`
 
-	fmt.Printf("Creating user invitation for user ID %d with token %s and expiry %s\n", userId, token, expiry)
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
 	defer cancel()
 
