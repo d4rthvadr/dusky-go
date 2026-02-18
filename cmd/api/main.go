@@ -5,6 +5,7 @@ import (
 
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
+	"github.com/d4rthvadr/dusky-go/internal/mailer"
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/d4rthvadr/dusky-go/internal/utils"
 	"github.com/joho/godotenv"
@@ -57,9 +58,16 @@ func main() {
 		apiUrl: config.ApiUrl,
 	}
 
+	isProdEnv := config.Environment == "production"
+
 	mailConfig := config.Mail
 
-	app := NewApplication(appConfig, store, db, logger, mailConfig)
+	mailer, err := mailer.NewSendGridMailer(mailConfig.SendGrid.APIKey, mailConfig.FromEmail)
+	if err != nil {
+		logger.Fatal("Error initializing mailer:", err)
+	}
+
+	app := NewApplication(appConfig, store, db, logger, mailConfig, mailer, isProdEnv)
 
 	mux := app.mount()
 
