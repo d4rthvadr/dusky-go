@@ -1,0 +1,24 @@
+{{define "subject"}} Finish Registration with DuskyGo {{end}}
+
+{{define "body"}}
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finish Registration with DuskyGo</title>
+</head>
+
+<body>
+    <p>Hello {{.UserName}},</p>
+    <p>You have been invited to join DuskyGo. To complete your registration, please click the link below:</p>
+    <p>Click the link below to finish your registration:</p>
+    <a href="{{.ActivationURL}}">{{.ActivationURL}}</a>
+    <p>If you did not request this invitation, please ignore this email.</p>
+    <p>Best regards,<br>The DuskyGo Team</p>
+</body>
+
+</html>
+
+{{end}}
