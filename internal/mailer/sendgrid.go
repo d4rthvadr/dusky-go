@@ -20,7 +20,7 @@ type SendGridMailer struct {
 	maxRetries int
 }
 
-func NewSendGridMailer(apiKey string, fromEmail string) (*SendGridMailer, error) {
+func NewSendGridMailer(apiKey string, fromEmail string, maxRetries int) (*SendGridMailer, error) {
 
 	if apiKey == "" {
 		return nil, fmt.Errorf("sendgrid api key should not be null")
@@ -29,7 +29,7 @@ func NewSendGridMailer(apiKey string, fromEmail string) (*SendGridMailer, error)
 	return &SendGridMailer{
 		fromEmail:  fromEmail,
 		client:     client,
-		maxRetries: 3,
+		maxRetries: maxRetries,
 	}, nil
 }
 

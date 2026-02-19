@@ -62,7 +62,9 @@ func main() {
 
 	mailConfig := config.Mail
 
-	mailer, err := mailer.NewSendGridMailer(mailConfig.SendGrid.APIKey, mailConfig.FromEmail)
+	var maxEmailRetries int
+
+	mailer, err := mailer.NewSendGridMailer(mailConfig.SendGrid.APIKey, mailConfig.FromEmail, maxEmailRetries)
 	if err != nil {
 		logger.Fatal("Error initializing mailer:", err)
 	}
