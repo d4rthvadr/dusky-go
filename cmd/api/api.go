@@ -8,8 +8,8 @@ import (
 
 	"github.com/d4rthvadr/dusky-go/internal/auth"
 	"github.com/d4rthvadr/dusky-go/internal/config"
-	apphttp "github.com/d4rthvadr/dusky-go/internal/http"
 	"github.com/d4rthvadr/dusky-go/internal/http/handlers"
+	apphttpRouter "github.com/d4rthvadr/dusky-go/internal/http/router"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/d4rthvadr/dusky-go/internal/utils"
@@ -40,7 +40,7 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
 
-	apphttp.MountV1Routes(r, app.handler, app.config.apiUrl)
+	apphttpRouter.MountV1Routes(r, app.handler, app.config.apiUrl)
 
 	return r
 }

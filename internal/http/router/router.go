@@ -1,4 +1,4 @@
-package http
+package router
 
 import (
 	"fmt"
@@ -20,6 +20,9 @@ func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
 		r.Route("/posts", func(r chi.Router) {
+
+			r.Use(handler.AuthTokenMiddleware)
+
 			r.Post("/", handler.CreatePost)
 
 			r.Route("/{postID}", func(r chi.Router) {
@@ -33,14 +36,16 @@ func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 
 			r.Put("/activate/{token}", handler.ActivateUserHandler)
 
-			r.Route("/{userID}", func(r chi.Router) {
-				r.Use(handler.UserContextMiddleware)
-				r.Get("/", handler.GetUser)
-				r.Put("/follow", handler.FollowUser)
-				r.Put("/unfollow", handler.UnfollowUser)
-			})
-
 			r.Group(func(r chi.Router) {
+				r.Use(handler.AuthTokenMiddleware)
+
+				r.Route("/{userID}", func(r chi.Router) {
+					r.Use(handler.UserContextMiddleware)
+					r.Get("/", handler.GetUser)
+					r.Put("/follow", handler.FollowUser)
+					r.Put("/unfollow", handler.UnfollowUser)
+				})
+
 				r.Get("/feed", handler.GetUserFeed)
 			})
 

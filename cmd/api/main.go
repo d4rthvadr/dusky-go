@@ -70,7 +70,7 @@ func main() {
 		logger.Fatal("Error initializing mailer:", err)
 	}
 
-	jwtAuthenticator := auth.NewJWTAuthenticator(config.JWT.SecretKey, config.JWT.Audience, config.JWT.Issuer)
+	jwtAuthenticator := auth.NewJWTAuthenticator(config.JWT.SecretKey, config.JWT.Audience, config.JWT.Issuer, int64(config.JWT.Expiry))
 
 	app := NewApplication(appOptions{
 		config:           appConfig,

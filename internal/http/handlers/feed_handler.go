@@ -6,23 +6,32 @@ import (
 	"github.com/d4rthvadr/dusky-go/internal/store"
 )
 
+type FeedPostResponse struct {
+	ID           int64    `json:"id"`
+	UserID       int64    `json:"userId"`
+	Username     string   `json:"username"`
+	CommentCount int      `json:"commentCount"`
+	Title        string   `json:"title"`
+	Tags         []string `json:"tags"`
+	Content      string   `json:"content"`
+	CreatedAt    string   `json:"createdAt"`
+	UpdatedAt    string   `json:"updatedAt"`
+}
+
 // GetUserFeed godoc
 //
-//	@Summary		Get the user's feed
-//	@Description	Get a paginated list of posts from users that the authenticated user follows.
-//	@Tags			feed
+//	@Summary		Get the authenticated user's feed
+//	@Description	Retrieve a paginated list of posts from users that the authenticated user follows.
+//	@Tags			Feed
 //	@Accept			json
 //	@Produce		json
-//
-//	@param			limit	query		int			false	"Number of items per page for pagination (default: 10)"
-//	@param			offset	query		int			false	"Page number for pagination (default: 1)"
-//	@param			search	query		string		false	"Search term to filter posts by title or content"
-//	@param			tags	query		[]string	false	"Comma-separated list of tags to filter posts by (e.g., tag1,tag2,tag3)"
-//	@param			sort	query		string		false	"Sort order for posts (e.g., createdAt:desc or createdAt:asc)"
-//	@Success		200		{array}		map[string]interface{}
+//	@Param			page	query		int	false	"Page number for pagination"
+//	@Param			size	query		int	false	"Number of items per page"
+//	@Success		200		{array}		FeedPostResponse
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
-//	@Router			/feed [get]
+//	@Security		ApiKeyAuth
+//	@Router			/users/feed [get]
 func (h *Handler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 	query := store.NewPaginatedFeedQuery()
 	if err := query.Parse(r); err != nil {
@@ -36,21 +45,9 @@ func (h *Handler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type PostResponse struct {
-		ID           int64    `json:"id"`
-		UserID       int64    `json:"userId"`
-		Username     string   `json:"username"`
-		CommentCount int      `json:"commentCount"`
-		Title        string   `json:"title"`
-		Tags         []string `json:"tags"`
-		Content      string   `json:"content"`
-		CreatedAt    string   `json:"createdAt"`
-		UpdatedAt    string   `json:"updatedAt"`
-	}
-
-	response := make([]PostResponse, 0, len(posts))
+	response := make([]FeedPostResponse, 0, len(posts))
 	for _, post := range posts {
-		response = append(response, PostResponse{
+		response = append(response, FeedPostResponse{
 			ID:           post.ID,
 			Title:        post.Title,
 			UserID:       post.UserID,

@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/d4rthvadr/dusky-go/internal/auth"
 	errCustom "github.com/d4rthvadr/dusky-go/internal/errors"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
 	"github.com/d4rthvadr/dusky-go/internal/models"
@@ -159,7 +158,7 @@ func (h *Handler) CreateUserToken(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	token, err := h.generateTokenForUser(user.ID, h.jwtAuthenticator)
+	token, err := h.generateTokenForUser(user.ID)
 
 	if err != nil {
 		// TODO: map the error to a more user-friendly message if needed
@@ -175,15 +174,15 @@ func (h *Handler) CreateUserToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// generateTokenForUser generates a JWT token for the given user ID using the provided JWTAuthenticator.
-func (h *Handler) generateTokenForUser(userID int64, jwtAuthenticator *auth.JWTAuthenticator) (string, error) {
+// generateTokenForUser generates a JWT token for the given user ID with standard claims.
+func (h *Handler) generateTokenForUser(userID int64) (string, error) {
 
 	claims := jwt.MapClaims{
 		"sub": userID,
-		"aud": jwtAuthenticator.Aud,
-		"iss": jwtAuthenticator.Iss,
-		"exp": jwtAuthenticator.Exp,
+		"aud": h.jwtAuthenticator.Aud,
+		"iss": h.jwtAuthenticator.Iss,
+		"exp": h.jwtAuthenticator.Exp,
 	}
 
-	return jwtAuthenticator.GenerateToken(claims)
+	return h.jwtAuthenticator.GenerateToken(claims)
 }
