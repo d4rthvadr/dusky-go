@@ -93,6 +93,11 @@ func (m *SendGridMailer) buildMessage(from, to *mail.Email, subject, body string
 // sendEmailWithRetry attempts to send the email and retries if it fails, with a backoff strategy.
 func (m *SendGridMailer) sendEmailWithRetry(message *mail.SGMailV3, isSandbox bool) error {
 
+	// If we're in sandbox mode, we won't actually send the email, so we can skip the retry logic.
+	if isSandbox {
+		return nil
+	}
+
 	isSent := false
 	var errSend error
 

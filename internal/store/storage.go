@@ -27,6 +27,7 @@ type Storage struct {
 		GetByID(context.Context, int64) (*models.User, error)
 		CreateAndInvite(context.Context, *models.User, string, time.Duration) error
 		ActivateUser(context.Context, string) error
+		GetByEmail(context.Context, string, *models.User) error
 	}
 	Followers interface {
 		Follow(context.Context, int64, int64) error

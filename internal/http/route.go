@@ -49,6 +49,7 @@ func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 		// Public routes
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", handler.RegisterUser)
+			r.Post("/token", handler.CreateUserToken)
 
 		})
 	})

@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/d4rthvadr/dusky-go/internal/auth"
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	apphttp "github.com/d4rthvadr/dusky-go/internal/http"
 	"github.com/d4rthvadr/dusky-go/internal/http/handlers"
@@ -18,11 +19,12 @@ import (
 )
 
 type application struct {
-	config  AppConfig
-	store   store.Storage
-	db      *sql.DB
-	logger  utils.Logger
-	handler *handlers.Handler
+	config           AppConfig
+	store            store.Storage
+	db               *sql.DB
+	logger           utils.Logger
+	jwtAuthenticator *auth.JWTAuthenticator
+	handler          *handlers.Handler
 }
 
 type AppConfig struct {
@@ -79,15 +81,24 @@ func (app *application) Run(mux *chi.Mux) error {
 	return srv.ListenAndServe()
 }
 
-func NewApplication(
-	config AppConfig, store store.Storage,
-	db *sql.DB, logger utils.Logger,
-	mailConfig config.MailConfig, mailer mailer.Client, isProdEnv bool) *application {
+type appOptions struct {
+	config           AppConfig
+	store            store.Storage
+	db               *sql.DB
+	logger           utils.Logger
+	mailConfig       config.MailConfig
+	mailer           mailer.Client
+	jwtAuthenticator *auth.JWTAuthenticator
+	isProdEnv        bool
+}
+
+func NewApplication(options appOptions) *application {
 	return &application{
-		config:  config,
-		store:   store,
-		db:      db,
-		logger:  logger,
-		handler: handlers.New(store, version, logger, mailConfig, mailer, isProdEnv),
+		config:           options.config,
+		store:            options.store,
+		db:               options.db,
+		logger:           options.logger,
+		jwtAuthenticator: options.jwtAuthenticator,
+		handler:          handlers.New(options.store, version, options.logger, options.mailConfig, options.mailer, options.jwtAuthenticator, options.isProdEnv),
 	}
 }

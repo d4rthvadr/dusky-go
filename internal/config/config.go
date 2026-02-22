@@ -28,10 +28,18 @@ type MailConfig struct {
 	ApiUrl    string
 	SendGrid  sendGridConfig
 }
+
+type JWTConfig struct {
+	SecretKey string
+	Audience  string
+	Issuer    string
+	Expiry    time.Duration
+}
 type AppConfig struct {
 	Server      serverConfig
 	Db          dbConfig
 	Mail        MailConfig
+	JWT         JWTConfig
 	Environment string
 	ApiUrl      string
 }
@@ -48,6 +56,10 @@ func InitializeConfig() (*AppConfig, error) {
 	sendGridAPIKey := env.GetEnv("SENDGRID_API_KEY", "")
 	fromEmail := env.GetEnv("FROM_EMAIL", "")
 	environment := env.GetEnv("ENV", "development")
+	jwtSecretKey := env.GetEnv("JWT_SECRET_KEY", "")
+	jwtAudience := env.GetEnv("JWT_AUDIENCE", "")
+	jwtIssuer := env.GetEnv("JWT_ISSUER", "")
+	jwtExpiry := env.GetEnvAsDuration("JWT_EXPIRY", time.Hour*24)
 
 	config := &AppConfig{
 		Server: serverConfig{
@@ -67,6 +79,12 @@ func InitializeConfig() (*AppConfig, error) {
 			SendGrid: sendGridConfig{
 				APIKey: sendGridAPIKey,
 			},
+		},
+		JWT: JWTConfig{
+			SecretKey: jwtSecretKey,
+			Audience:  jwtAudience,
+			Issuer:    jwtIssuer,
+			Expiry:    jwtExpiry,
 		},
 		Environment: environment,
 	}
