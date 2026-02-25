@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/d4rthvadr/dusky-go/internal/auth"
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
@@ -62,12 +63,25 @@ func main() {
 
 	mailConfig := config.Mail
 
-	mailer, err := mailer.NewSendGridMailer(mailConfig.SendGrid.APIKey, mailConfig.FromEmail)
+	var maxEmailRetries int
+
+	mailer, err := mailer.NewSendGridMailer(mailConfig.SendGrid.APIKey, mailConfig.FromEmail, maxEmailRetries)
 	if err != nil {
 		logger.Fatal("Error initializing mailer:", err)
 	}
 
-	app := NewApplication(appConfig, store, db, logger, mailConfig, mailer, isProdEnv)
+	jwtAuthenticator := auth.NewJWTAuthenticator(config.JWT.SecretKey, config.JWT.Audience, config.JWT.Issuer, int64(config.JWT.Expiry))
+
+	app := NewApplication(appOptions{
+		config:           appConfig,
+		store:            store,
+		db:               db,
+		logger:           logger,
+		mailConfig:       mailConfig,
+		mailer:           mailer,
+		jwtAuthenticator: jwtAuthenticator,
+		isProdEnv:        isProdEnv,
+	})
 
 	mux := app.mount()
 

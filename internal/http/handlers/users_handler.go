@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/models"
@@ -231,6 +232,71 @@ func (h *Handler) UserContextMiddleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), userContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (h *Handler) AuthTokenMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			h.logger.Warnf("missing authorization header")
+			h.unauthorizedError(w, r, errors.New("authorization header is required"))
+			return
+		}
+
+		tokenStr := extractTokenFromHeader(authHeader)
+		if tokenStr == "" {
+			h.logger.Warnf("invalid authorization header format: %s", authHeader)
+			h.unauthorizedError(w, r, errors.New("invalid authorization header format"))
+			return
+		}
+
+		jwtToken, err := h.jwtAuthenticator.ValidateToken(tokenStr)
+		if err != nil {
+			h.logger.Warnf("invalid token: %s error: %s", tokenStr, err.Error())
+			h.unauthorizedError(w, r, errors.New("invalid or expired token"))
+			return
+		}
+
+		userID, err := h.jwtAuthenticator.GetUserIDFromClaims(jwtToken)
+		if err != nil {
+			h.logger.Warnf("failed to get user ID from token claims: %v", err.Error())
+			h.unauthorizedError(w, r, err)
+			return
+		}
+
+		// get user from database to ensure the user still exists and is active
+		user, err := h.store.Users.GetByID(r.Context(), userID)
+		if err != nil {
+			h.logger.Warnf("failed to fetch user by ID from token: %d error: %s", userID, err.Error())
+			h.unauthorizedError(w, r, errors.New("invalid or expired token"))
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userContextKey, user)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// extractTokenFromHeader extracts a JWT token from the Authorization header.
+// It accepts both "Bearer <token>" and raw "<token>" formats.
+func extractTokenFromHeader(authHeader string) string {
+	authHeader = strings.TrimSpace(authHeader)
+	if authHeader == "" {
+		return ""
+	}
+
+	const prefix = "Bearer "
+	if len(authHeader) > len(prefix) && strings.EqualFold(authHeader[:len(prefix)], prefix) {
+		token := strings.TrimSpace(authHeader[len(prefix):])
+		if token == "" {
+			return ""
+		}
+		return token
+	}
+
+	return authHeader
 }
 
 func getUserFromContext(ctx context.Context) (*models.User, bool) {

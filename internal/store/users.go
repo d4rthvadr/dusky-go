@@ -111,7 +111,7 @@ func (u *UserStore) GetByID(ctx context.Context, id int64) (*models.User, error)
 	query := `
 	SELECT id, username, email, password_hash, created_at, updated_at
 	FROM users
-	WHERE id = $1
+	WHERE id = $1 AND activated = true
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
@@ -174,4 +174,21 @@ func (u *UserStore) CreateAndInvite(ctx context.Context, user *models.User, toke
 
 		return nil
 	})
+}
+
+func (u *UserStore) GetByEmail(ctx context.Context, email string, user *models.User) error {
+
+	query := `
+	SELECT id, username, email, password_hash, created_at, updated_at
+	FROM users
+	WHERE email = $1 AND activated = true
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
+	defer cancel()
+
+	err := u.db.QueryRowContext(ctx, query, email).
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+
+	return errCustom.HandleStorageError(err)
 }

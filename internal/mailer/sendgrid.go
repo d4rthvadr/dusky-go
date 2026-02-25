@@ -20,7 +20,7 @@ type SendGridMailer struct {
 	maxRetries int
 }
 
-func NewSendGridMailer(apiKey string, fromEmail string) (*SendGridMailer, error) {
+func NewSendGridMailer(apiKey string, fromEmail string, maxRetries int) (*SendGridMailer, error) {
 
 	if apiKey == "" {
 		return nil, fmt.Errorf("sendgrid api key should not be null")
@@ -29,7 +29,7 @@ func NewSendGridMailer(apiKey string, fromEmail string) (*SendGridMailer, error)
 	return &SendGridMailer{
 		fromEmail:  fromEmail,
 		client:     client,
-		maxRetries: 3,
+		maxRetries: maxRetries,
 	}, nil
 }
 
@@ -92,6 +92,11 @@ func (m *SendGridMailer) buildMessage(from, to *mail.Email, subject, body string
 
 // sendEmailWithRetry attempts to send the email and retries if it fails, with a backoff strategy.
 func (m *SendGridMailer) sendEmailWithRetry(message *mail.SGMailV3, isSandbox bool) error {
+
+	// If we're in sandbox mode, we won't actually send the email, so we can skip the retry logic.
+	if isSandbox {
+		return nil
+	}
 
 	isSent := false
 	var errSend error

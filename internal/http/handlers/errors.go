@@ -27,3 +27,12 @@ func (h *Handler) notFoundError(w http.ResponseWriter, r *http.Request, _ error)
 	h.logger.Warnf("not found error: %s path: %s error: %s", "the requested resource could not be found", r.URL.Path, r.RemoteAddr)
 	writeJSONError(w, http.StatusNotFound, "the requested resource could not be found")
 }
+
+func (h *Handler) unauthorizedError(w http.ResponseWriter, r *http.Request, err error) {
+	if err == nil {
+		err = errors.New("unauthorized")
+	}
+
+	h.logger.Warnf("unauthorized error: %s path: %s error: %s", err.Error(), r.URL.Path, r.RemoteAddr)
+	writeJSONError(w, http.StatusUnauthorized, err.Error())
+}
