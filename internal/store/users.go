@@ -91,13 +91,17 @@ func (u *UserStore) Create(ctx context.Context, tx *sql.Tx, user *models.User) e
 
 	query := `
 	INSERT INTO users (username, email, password_hash, role_id) 
-	VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at
+	VALUES ($1, $2, $3, (select id from roles where name = $4)) RETURNING id, created_at, updated_at
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
 	defer cancel()
 
-	err := tx.QueryRowContext(ctx, query, user.Username, user.Email, user.Password.Hash, user.RoleID).
+	if user.Role.Name == "" {
+		user.Role.Name = "user"
+	}
+
+	err := tx.QueryRowContext(ctx, query, user.Username, user.Email, user.Password.Hash, user.Role.Name).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	//TODO: handle sql.Errors to user like duplicate email or username, not found, etc
@@ -109,7 +113,7 @@ func (u *UserStore) Create(ctx context.Context, tx *sql.Tx, user *models.User) e
 func (u *UserStore) GetByID(ctx context.Context, id int64) (*models.User, error) {
 
 	query := `
-	SELECT users.id, users.username, users.email, users.password_hash, users.role_id, users.created_at, users.updated_at, roles.id, roles.name, roles.level
+	SELECT users.id, users.username, users.email, users.password_hash, users.created_at, users.updated_at, roles.id, roles.name, roles.level
 	FROM users join roles on users.role_id = roles.id
 	WHERE users.id = $1 AND users.activated = true
 	`
@@ -119,7 +123,7 @@ func (u *UserStore) GetByID(ctx context.Context, id int64) (*models.User, error)
 
 	var user models.User
 	err := u.db.QueryRowContext(ctx, query, id).
-		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RoleID, &user.CreatedAt, &user.UpdatedAt, &user.Role.ID, &user.Role.Name, &user.Role.Level)
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt, &user.Role.ID, &user.Role.Name, &user.Role.Level)
 
 	if err != nil {
 		return nil, errCustom.HandleStorageError(err)
@@ -179,7 +183,7 @@ func (u *UserStore) CreateAndInvite(ctx context.Context, user *models.User, toke
 func (u *UserStore) GetByEmail(ctx context.Context, email string, user *models.User) error {
 
 	query := `
-	SELECT id, username, email, password_hash, role_id, created_at, updated_at
+	SELECT id, username, email, password_hash, created_at, updated_at
 	FROM users
 	WHERE email = $1 AND activated = true
 	`
@@ -188,7 +192,7 @@ func (u *UserStore) GetByEmail(ctx context.Context, email string, user *models.U
 	defer cancel()
 
 	err := u.db.QueryRowContext(ctx, query, email).
-		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RoleID, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	return errCustom.HandleStorageError(err)
 }
