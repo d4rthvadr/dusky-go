@@ -34,7 +34,7 @@ type Storage struct {
 		Unfollow(context.Context, int64, int64) error
 	}
 	Roles interface {
-		GetByName(context.Context, string) (*models.Role, error)
+		GetByName(context.Context, models.RoleStr) (*models.Role, error)
 	}
 }
 

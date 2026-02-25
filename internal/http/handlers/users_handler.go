@@ -306,7 +306,7 @@ func getUserFromContext(ctx context.Context) (*models.User, bool) {
 }
 
 // checkRole checks if the user's role level meets the required role level for accessing a resource.
-func checkRole(ctx context.Context, user *models.User, store store.Storage, requiredRole string) (bool, error) {
+func checkRole(ctx context.Context, user *models.User, store store.Storage, requiredRole models.RoleStr) (bool, error) {
 
 	// get role from database
 	roleModel, err := store.Roles.GetByName(ctx, requiredRole)
@@ -321,7 +321,7 @@ func checkRole(ctx context.Context, user *models.User, store store.Storage, requ
 	return true, nil
 }
 
-func (h *Handler) CheckPostOwnershipMiddleware(requiredRole string, next http.HandlerFunc) http.HandlerFunc {
+func (h *Handler) CheckPostOwnershipMiddleware(requiredRole models.RoleStr, next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		user, ok := getUserFromContext(r.Context())

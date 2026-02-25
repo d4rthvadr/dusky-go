@@ -16,7 +16,6 @@ type User struct {
 	Role      Role     `json:"role"`
 	CreatedAt string   `json:"created_at"`
 	UpdatedAt string   `json:"updated_at"`
-	RoleID    int64    `json:"role_id,omitempty"`
 }
 
 type password struct {

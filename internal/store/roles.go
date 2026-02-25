@@ -13,7 +13,7 @@ type RoleStore struct {
 	db *sql.DB
 }
 
-func (r *RoleStore) GetByName(ctx context.Context, name string) (*models.Role, error) {
+func (r *RoleStore) GetByName(ctx context.Context, name models.RoleStr) (*models.Role, error) {
 	query := `SELECT id, name, description, level, created_at, updated_at FROM roles WHERE name = $1`
 	row := r.db.QueryRowContext(ctx, query, name)
 
