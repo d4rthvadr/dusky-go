@@ -27,8 +27,8 @@ func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 
 			r.Route("/{postID}", func(r chi.Router) {
 				r.Get("/", handler.GetPost)
-				r.Delete("/", handler.DeletePost)
-				r.Patch("/", handler.UpdatePost)
+				r.Delete("/", handler.CheckPostOwnershipMiddleware("admin", handler.DeletePost))
+				r.Patch("/", handler.CheckPostOwnershipMiddleware("admin", handler.UpdatePost))
 			})
 		})
 

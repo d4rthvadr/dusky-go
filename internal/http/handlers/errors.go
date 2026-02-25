@@ -36,3 +36,12 @@ func (h *Handler) unauthorizedError(w http.ResponseWriter, r *http.Request, err 
 	h.logger.Warnf("unauthorized error: %s path: %s error: %s", err.Error(), r.URL.Path, r.RemoteAddr)
 	writeJSONError(w, http.StatusUnauthorized, err.Error())
 }
+
+func (h *Handler) forbiddenError(w http.ResponseWriter, r *http.Request, err error) {
+	if err == nil {
+		err = errors.New("forbidden")
+	}
+
+	h.logger.Warnf("forbidden error: %s path: %s error: %s", err.Error(), r.URL.Path, r.RemoteAddr)
+	writeJSONError(w, http.StatusForbidden, err.Error())
+}
