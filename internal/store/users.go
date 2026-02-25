@@ -90,14 +90,14 @@ func (u *UserStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, token
 func (u *UserStore) Create(ctx context.Context, tx *sql.Tx, user *models.User) error {
 
 	query := `
-	INSERT INTO users (username, email, password_hash) 
-	VALUES ($1, $2, $3) RETURNING id, created_at, updated_at
+	INSERT INTO users (username, email, password_hash, role_id) 
+	VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, defaultQueryTimeoutDuration)
 	defer cancel()
 
-	err := tx.QueryRowContext(ctx, query, user.Username, user.Email, user.Password.Hash).
+	err := tx.QueryRowContext(ctx, query, user.Username, user.Email, user.Password.Hash, user.RoleID).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	//TODO: handle sql.Errors to user like duplicate email or username, not found, etc
@@ -109,7 +109,7 @@ func (u *UserStore) Create(ctx context.Context, tx *sql.Tx, user *models.User) e
 func (u *UserStore) GetByID(ctx context.Context, id int64) (*models.User, error) {
 
 	query := `
-	SELECT id, username, email, password_hash, created_at, updated_at
+	SELECT id, username, email, password_hash, role_id, created_at, updated_at
 	FROM users
 	WHERE id = $1 AND activated = true
 	`
@@ -119,7 +119,7 @@ func (u *UserStore) GetByID(ctx context.Context, id int64) (*models.User, error)
 
 	var user models.User
 	err := u.db.QueryRowContext(ctx, query, id).
-		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RoleID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return nil, errCustom.HandleStorageError(err)
@@ -179,7 +179,7 @@ func (u *UserStore) CreateAndInvite(ctx context.Context, user *models.User, toke
 func (u *UserStore) GetByEmail(ctx context.Context, email string, user *models.User) error {
 
 	query := `
-	SELECT id, username, email, password_hash, created_at, updated_at
+	SELECT id, username, email, password_hash, role_id, created_at, updated_at
 	FROM users
 	WHERE email = $1 AND activated = true
 	`
@@ -188,7 +188,7 @@ func (u *UserStore) GetByEmail(ctx context.Context, email string, user *models.U
 	defer cancel()
 
 	err := u.db.QueryRowContext(ctx, query, email).
-		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.RoleID, &user.CreatedAt, &user.UpdatedAt)
 
 	return errCustom.HandleStorageError(err)
 }

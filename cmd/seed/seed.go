@@ -105,6 +105,7 @@ func generateUsers(count int) []models.User {
 		username := getFakeUsername(i) + "_" + generateRandomHash()
 		users[i] = models.User{
 			Username: username,
+			RoleID:   1,
 			Email:    fmt.Sprintf("user_%s@example.com", username),
 		}
 
