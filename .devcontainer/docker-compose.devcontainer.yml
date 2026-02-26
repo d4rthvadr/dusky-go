@@ -1,0 +1,38 @@
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/go:1-1.24-bookworm
+    working_dir: /workspaces/dusky-go
+    command: sleep infinity
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ..:/workspaces/dusky-go:cached
+      - go_pkg_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+
+  api:
+    build:
+      context: ..
+      dockerfile: DockerFile.prd
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ADDR: "8082"
+      DB_ADDR: postgres://admin:adminpassword@postgres:5432/duskydb?sslmode=disable
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: redispassword
+      REDIS_DB: "0"
+      REDIS_ADDR: redis://:redispassword@redis:6379/0
+    ports:
+      - "8082:8082"
+
+volumes:
+  go_pkg_mod_cache:
+  go_build_cache:

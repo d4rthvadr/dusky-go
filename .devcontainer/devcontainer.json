@@ -1,0 +1,33 @@
+{
+  "name": "Dusky Go API",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.devcontainer.yml"
+  ],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/dusky-go/dusky-go",
+  "runServices": ["postgres", "redis", "devcontainer"],
+  "shutdownAction": "stopCompose",
+  "remoteUser": "vscode",
+  "forwardPorts": [8082, 5432, 6379],
+  "remoteEnv": {
+    "DB_ADDR": "postgres://admin:adminpassword@postgres:5432/duskydb?sslmode=disable",
+    "REDIS_HOST": "redis",
+    "REDIS_PORT": "6379",
+    "REDIS_PASSWORD": "redispassword",
+    "REDIS_DB": "0",
+    "REDIS_ADDR": "redis://:redispassword@redis:6379/0",
+    "GOMODCACHE": "/workspaces/dusky-go/dusky-go/.cache/go-mod",
+    "GOCACHE": "/workspaces/dusky-go/dusky-go/.cache/go-build"
+  },
+  "postCreateCommand": "go mod download",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml"
+      ]
+    }
+  }
+}
