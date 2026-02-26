@@ -13,6 +13,4 @@ type Role struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	Level       int    `json:"level"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
 }

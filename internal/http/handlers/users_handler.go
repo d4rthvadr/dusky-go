@@ -37,6 +37,7 @@ const UserIDKey string = "userID"
 //	@Success		201		{object}	models.User
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
+//	@Security		ApiKeyAuth
 //	@Router			/users [post]
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var createUser createUserPayload
@@ -311,7 +312,7 @@ func checkRole(ctx context.Context, user *models.User, store store.Storage, requ
 	// get role from database
 	roleModel, err := store.Roles.GetByName(ctx, requiredRole)
 	if err != nil {
-		return false, errors.New("error fetching role information")
+		return false, err
 	}
 
 	if user.Role.Level < roleModel.Level {
@@ -337,10 +338,10 @@ func (h *Handler) CheckPostOwnershipMiddleware(requiredRole models.RoleStr, next
 			return
 		}
 
-		if !isAllowed {
-			h.forbiddenError(w, r, err)
-			return
-		}
+		// if !isAllowed {
+		// 	h.forbiddenError(w, r, err)
+		// 	return
+		// }
 
 		// get post from database
 		postID, err := parseIDParam(r, "postID")
@@ -355,7 +356,7 @@ func (h *Handler) CheckPostOwnershipMiddleware(requiredRole models.RoleStr, next
 			return
 		}
 
-		if post.UserID != user.ID {
+		if post.UserID != user.ID && !isAllowed {
 			h.forbiddenError(w, r, errors.New("you do not have permission to access this resource"))
 			return
 		}
