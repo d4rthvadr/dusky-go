@@ -12,6 +12,7 @@ type createPostPayload struct {
 	Title   string   `json:"title" validate:"required,max=100"`
 	Content string   `json:"content" validate:"required,max=5000"`
 	Tags    []string `json:"tags,omitempty" validate:"dive,required"`
+	Version int      `json:"version" validate:"required"`
 }
 
 const PostIDKey string = "postID"
@@ -27,10 +28,14 @@ const PostIDKey string = "postID"
 //	@Success		201		{object}	models.Post
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
+//	@Security		ApiKeyAuth
 //	@Router			/posts [post]
 func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	var userID int64 = 1
-
+	user, ok := getUserFromContext(r.Context())
+	if !ok {
+		h.internalServerError(w, r, errors.New("user not found in request context"))
+		return
+	}
 	var post createPostPayload
 	if err := readJSON(r, &post); err != nil {
 		writeJSONError(w, http.StatusBadRequest, err.Error())
@@ -45,7 +50,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	postModel := models.Post{
 		Title:   post.Title,
 		Content: post.Content,
-		UserID:  userID,
+		UserID:  user.ID,
 		Tags:    post.Tags,
 	}
 
@@ -81,6 +86,7 @@ func (h *Handler) getPostID(r *http.Request) (int64, error) {
 //	@Failure		400		{object}	error
 //	@Failure		404		{object}	error
 //	@Failure		500		{object}	error
+//	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [get]
 func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -129,6 +135,7 @@ func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{object}	error
 //	@Failure		404		{object}	error
 //	@Failure		500		{object}	error
+//	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [delete]
 func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -166,6 +173,7 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{object}	error
 //	@Failure		404		{object}	error
 //	@Failure		500		{object}	error
+//	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [patch]
 func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -192,6 +200,7 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
+		Version: payload.Version,
 	}
 
 	if err := h.store.Posts.Update(ctx, &postModel); err != nil {

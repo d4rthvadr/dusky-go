@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/models"
+	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -36,6 +37,7 @@ const UserIDKey string = "userID"
 //	@Success		201		{object}	models.User
 //	@Failure		400		{object}	error
 //	@Failure		500		{object}	error
+//	@Security		ApiKeyAuth
 //	@Router			/users [post]
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var createUser createUserPayload
@@ -302,4 +304,64 @@ func extractTokenFromHeader(authHeader string) string {
 func getUserFromContext(ctx context.Context) (*models.User, bool) {
 	user, ok := ctx.Value(userContextKey).(*models.User)
 	return user, ok
+}
+
+// checkRole checks if the user's role level meets the required role level for accessing a resource.
+func checkRole(ctx context.Context, user *models.User, store store.Storage, requiredRole models.RoleStr) (bool, error) {
+
+	// get role from database
+	roleModel, err := store.Roles.GetByName(ctx, requiredRole)
+	if err != nil {
+		return false, err
+	}
+
+	if user.Role.Level < roleModel.Level {
+		return false, errors.New("you do not have permission to access this resource")
+	}
+
+	return true, nil
+}
+
+func (h *Handler) CheckPostOwnershipMiddleware(requiredRole models.RoleStr, next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		user, ok := getUserFromContext(r.Context())
+		if !ok {
+			h.internalServerError(w, r, errors.New("user not found in request context"))
+			return
+		}
+
+		isAllowed, err := checkRole(r.Context(), user, h.store, requiredRole)
+		if err != nil {
+			h.logger.Errorf("error checking role precedence: %v", err)
+			h.internalServerError(w, r, err)
+			return
+		}
+
+		// if !isAllowed {
+		// 	h.forbiddenError(w, r, err)
+		// 	return
+		// }
+
+		// get post from database
+		postID, err := parseIDParam(r, "postID")
+		if err != nil {
+			h.badRequestError(w, r, errors.New("invalid post ID"))
+			return
+		}
+
+		post, err := h.store.Posts.GetByID(r.Context(), postID)
+		if err != nil {
+			h.badRequestError(w, r, errors.New("post not found"))
+			return
+		}
+
+		if post.UserID != user.ID && !isAllowed {
+			h.forbiddenError(w, r, errors.New("you do not have permission to access this resource"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+
+	})
 }

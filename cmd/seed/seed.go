@@ -106,6 +106,7 @@ func generateUsers(count int) []models.User {
 		users[i] = models.User{
 			Username: username,
 			Email:    fmt.Sprintf("user_%s@example.com", username),
+			// role is set to default "user" in the store if not provided
 		}
 
 		users[i].Password.Set("password123")
