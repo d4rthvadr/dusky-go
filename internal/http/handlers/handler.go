@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/d4rthvadr/dusky-go/internal/auth"
+	"github.com/d4rthvadr/dusky-go/internal/cache"
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
 	"github.com/d4rthvadr/dusky-go/internal/store"
@@ -12,6 +13,7 @@ import (
 
 type Handler struct {
 	store            store.Storage
+	cache            cache.CacheStorage
 	version          string
 	logger           utils.Logger
 	mailConfig       config.MailConfig
@@ -20,15 +22,27 @@ type Handler struct {
 	jwtAuthenticator *auth.JWTAuthenticator
 }
 
-func New(store store.Storage, version string, logger utils.Logger, mailConfig config.MailConfig, mailer mailer.Client, jwtAuthenticator *auth.JWTAuthenticator, isProdEnv bool) *Handler {
+type HandlerOptions struct {
+	Store            store.Storage
+	Version          string
+	Logger           utils.Logger
+	MailConfig       config.MailConfig
+	Mailer           mailer.Client
+	JWTAuthenticator *auth.JWTAuthenticator
+	Cache            cache.CacheStorage
+	IsProdEnv        bool
+}
+
+func New(opts HandlerOptions) *Handler {
 	return &Handler{
-		store:            store,
-		version:          version,
-		logger:           logger,
-		mailConfig:       mailConfig,
-		mailer:           mailer,
-		isProdEnv:        isProdEnv,
-		jwtAuthenticator: jwtAuthenticator,
+		store:            opts.Store,
+		cache:            opts.Cache,
+		version:          opts.Version,
+		logger:           opts.Logger,
+		mailConfig:       opts.MailConfig,
+		mailer:           opts.Mailer,
+		isProdEnv:        opts.IsProdEnv,
+		jwtAuthenticator: opts.JWTAuthenticator,
 	}
 }
 

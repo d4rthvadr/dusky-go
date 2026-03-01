@@ -19,7 +19,6 @@ type RedisOptions struct {
 
 // NewRedisClient initializes a new Redis client with the provided options.
 func NewRedisClient(options *RedisOptions) *RedisClient {
-
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     options.Addr,
 		Password: options.Password,

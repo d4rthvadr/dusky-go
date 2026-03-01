@@ -15,8 +15,8 @@ type CacheStorage struct {
 	}
 }
 
-func NewCache(rdb *RedisClient) *CacheStorage {
-	return &CacheStorage{
+func NewCache(rdb *RedisClient) CacheStorage {
+	return CacheStorage{
 		Users: &UserCache{rdb: rdb},
 	}
 }

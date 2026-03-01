@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/auth"
+	"github.com/d4rthvadr/dusky-go/internal/cache"
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/http/handlers"
 	apphttpRouter "github.com/d4rthvadr/dusky-go/internal/http/router"
@@ -22,6 +23,7 @@ type application struct {
 	config           AppConfig
 	store            store.Storage
 	db               *sql.DB
+	cache            cache.CacheStorage
 	logger           utils.Logger
 	jwtAuthenticator *auth.JWTAuthenticator
 	handler          *handlers.Handler
@@ -85,6 +87,7 @@ type appOptions struct {
 	config           AppConfig
 	store            store.Storage
 	db               *sql.DB
+	cache            cache.CacheStorage
 	logger           utils.Logger
 	mailConfig       config.MailConfig
 	mailer           mailer.Client
@@ -97,8 +100,18 @@ func NewApplication(options appOptions) *application {
 		config:           options.config,
 		store:            options.store,
 		db:               options.db,
+		cache:            options.cache,
 		logger:           options.logger,
 		jwtAuthenticator: options.jwtAuthenticator,
-		handler:          handlers.New(options.store, version, options.logger, options.mailConfig, options.mailer, options.jwtAuthenticator, options.isProdEnv),
+		handler: handlers.New(handlers.HandlerOptions{
+			Store:            options.store,
+			Version:          version,
+			Logger:           options.logger,
+			MailConfig:       options.mailConfig,
+			Mailer:           options.mailer,
+			JWTAuthenticator: options.jwtAuthenticator,
+			Cache:            options.cache,
+			IsProdEnv:        options.isProdEnv,
+		}),
 	}
 }

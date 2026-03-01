@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/d4rthvadr/dusky-go/internal/auth"
+	"github.com/d4rthvadr/dusky-go/internal/cache"
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
@@ -52,6 +54,26 @@ func main() {
 
 	defer db.Close()
 
+	var cacheStorage cache.CacheStorage
+	var rdb *cache.RedisClient
+	if config.CacheConfig.Enabled {
+		rdb = cache.NewRedisClient(&cache.RedisOptions{
+			Addr:     config.CacheConfig.Addr,
+			Password: config.CacheConfig.Password,
+			DB:       config.CacheConfig.DB,
+		})
+
+		// test Redis connection
+		if err := rdb.Ping(context.Background()); err != nil {
+			logger.Panic("Error connecting to Redis:", err)
+		}
+		cacheStorage = cache.NewCache(rdb)
+	}
+
+	if rdb != nil {
+		defer rdb.Close()
+	}
+
 	store := store.NewStorage(db)
 
 	appConfig := AppConfig{
@@ -76,6 +98,7 @@ func main() {
 		config:           appConfig,
 		store:            store,
 		db:               db,
+		cache:            cacheStorage,
 		logger:           logger,
 		mailConfig:       mailConfig,
 		mailer:           mailer,
