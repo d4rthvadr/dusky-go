@@ -11,7 +11,7 @@ import (
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/models"
-	"github.com/d4rthvadr/dusky-go/internal/utils"
+	"github.com/d4rthvadr/dusky-go/internal/utils/logger"
 
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/joho/godotenv"
@@ -29,7 +29,7 @@ var fakeUsernames = []string{
 func main() {
 
 	err := godotenv.Load()
-	logger := utils.NewLogger()
+	logger := logger.NewLogger()
 	defer logger.Sync()
 	if err != nil {
 		logger.Fatal("Error loading .env file")
@@ -52,7 +52,7 @@ func main() {
 }
 
 func Seed(store store.Storage, db *sql.DB) error {
-	logger := utils.NewLogger()
+	logger := logger.NewLogger()
 	defer logger.Sync()
 	logger.Info("seeding...")
 	ctx := context.Background()
