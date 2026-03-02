@@ -35,6 +35,13 @@ type JWTConfig struct {
 	Issuer    string
 	Expiry    time.Duration
 }
+
+type CacheConfig struct {
+	Addr     string
+	Password string
+	DB       int
+	Enabled  bool
+}
 type AppConfig struct {
 	Server      serverConfig
 	Db          dbConfig
@@ -42,6 +49,7 @@ type AppConfig struct {
 	JWT         JWTConfig
 	Environment string
 	ApiUrl      string
+	CacheConfig CacheConfig
 }
 
 func InitializeConfig() (*AppConfig, error) {
@@ -87,6 +95,12 @@ func InitializeConfig() (*AppConfig, error) {
 			Expiry:    jwtExpiry,
 		},
 		Environment: environment,
+		CacheConfig: CacheConfig{
+			Addr:     env.GetEnv("REDIS_ADDR", "localhost:6379"),
+			Password: env.GetEnv("REDIS_PASSWORD", ""),
+			DB:       env.GetEnvAsInt("REDIS_DB", 0),
+			Enabled:  env.GetEnvAsBool("REDIS_ENABLED", false),
+		},
 	}
 	return config, nil
 }

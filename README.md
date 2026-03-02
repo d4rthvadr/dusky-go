@@ -2,7 +2,7 @@
 
 ## Technologies Used
 
-- **Go 1.23.2** - Programming language
+- **Go 1.24+** - Programming language
 - **Chi Router** - Lightweight HTTP router
 - **PostgreSQL** - Relational database
 - **Docker** - Database containerization
@@ -30,7 +30,7 @@
 
 ### Prerequisites
 
-- Go 1.23.2 or higher
+- Go 1.24 or higher
 - Docker and Docker Compose
 
 ### Installation
@@ -39,7 +39,7 @@
 
 ```bash
 git clone <repository-url>
-cd go-api-tutorial
+cd dusky-go
 ```
 
 2. Install dependencies
@@ -69,17 +69,79 @@ make migrate-up
 6. Build and run the application
 
 ```bash
-go run cmd/api/main.go
+go run ./cmd/api
 ```
 
-The API will be available at `http://localhost:3000`
+The API will be available at `http://localhost:8082`
+
+## Dev Container Onboarding
+
+Use this section when onboarding a new engineer with VS Code Dev Containers.
+
+### Prerequisites (host machine)
+
+- Docker Desktop / Docker Engine running
+- VS Code with the Dev Containers extension
+
+### What comes out of the box in the dev container
+
+- Go toolchain (from `mcr.microsoft.com/devcontainers/go`)
+- VS Code extensions:
+	- `golang.go`
+	- `ms-azuretools.vscode-docker`
+	- `redhat.vscode-yaml`
+- `postgres` and `redis` started automatically by devcontainer compose
+- Runtime environment variables for DB and Redis preconfigured in devcontainer
+- Go module/build cache paths preconfigured for the non-root `vscode` user
+
+### Open and start the project
+
+1. Open the `dusky-go` folder in VS Code and choose **Reopen in Container**.
+	- The container opens directly at the module root, so Explorer shows only project files (not parent workspace folders).
+2. Wait for container setup to complete (`postCreateCommand` runs `go mod download`).
+3. In the container terminal:
+
+```bash
+cp .env.example .env
+```
+
+4. Start the API:
+
+```bash
+go run ./cmd/api
+```
+
+The API will be available at `http://localhost:8082`.
+
+### Optional: build and run binary
+
+```bash
+go build -o bin/main ./cmd/api
+./bin/main
+```
+
+### Optional: migrations
+
+If the `migrate` CLI is installed in the container:
+
+```bash
+make migrate-up
+```
+
+### Optional: hot reload (`make dev`)
+
+`make dev` uses `air`. If `air` is missing, install it in the container:
+
+```bash
+go install github.com/air-verse/air@latest
+```
 
 ## Development
 
 ### Running the server
 
 ```bash
-go run cmd/api/main.go
+go run ./cmd/api
 ```
 
 ### Database Migrations
@@ -124,7 +186,7 @@ make migrate-force version=1
 ### Building for production
 
 ```bash
-go build -o bin/main cmd/api/main.go
+go build -o bin/main ./cmd/api
 ./bin/main
 ```
 
@@ -138,7 +200,7 @@ docker-compose down
 
 Environment variables can be configured in `.env`:
 
-- `ADDR` - Server port (default: 3000)
+- `ADDR` - Server port (default in this repo: 8082)
 - `DB_ADDR` - PostgreSQL connection string
 - `DB_MAX_OPEN_CONNS` - Maximum open database connections (default: 30)
 - `DB_MAX_IDLE_CONNS` - Maximum idle database connections (default: 30)

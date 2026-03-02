@@ -10,6 +10,7 @@ import (
 	"github.com/d4rthvadr/dusky-go/internal/models"
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 type createUserPayload struct {
@@ -225,8 +226,9 @@ func (h *Handler) UserContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := h.store.Users.GetByID(r.Context(), userID)
+		user, err := h.getUser(r.Context(), userID)
 		if err != nil {
+			h.logger.Errorf("error fetching user from database: %v", err)
 			h.badRequestError(w, r, err)
 			return
 		}
@@ -234,6 +236,34 @@ func (h *Handler) UserContextMiddleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), userContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (h *Handler) getUser(ctx context.Context, userID int64) (*models.User, error) {
+
+	// we need to check if cache is enabled
+	// before trying to get from cache, otherwise it will cause a nil pointer dereference panic
+
+	// DO this for every embeded function that might be option, or possibly nil, we need to check if it's nil before using it, otherwise it will cause a nil pointer dereference panic
+	// we can create a helper function to check if the cache is enabled and return the user from cache if it is, otherwise return nil and let the caller decide what to do
+	if h.cache.Users == nil {
+		// if cache is not enabled, fetch directly from database
+		return h.store.Users.GetByID(ctx, userID)
+	}
+	// check in cache first
+	user, err := h.cache.Users.Get(ctx, userID)
+	if errors.Is(err, redis.Nil) {
+		// cache miss, continue to fetch from database
+		user, err = h.store.Users.GetByID(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		h.cache.Users.Set(ctx, user, time.Minute*30) // set in cache for 30 minutes
+	} else if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+
 }
 
 func (h *Handler) AuthTokenMiddleware(next http.Handler) http.Handler {
@@ -267,8 +297,7 @@ func (h *Handler) AuthTokenMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// get user from database to ensure the user still exists and is active
-		user, err := h.store.Users.GetByID(r.Context(), userID)
+		user, err := h.getUser(r.Context(), userID)
 		if err != nil {
 			h.logger.Warnf("failed to fetch user by ID from token: %d error: %s", userID, err.Error())
 			h.unauthorizedError(w, r, errors.New("invalid or expired token"))
@@ -337,11 +366,6 @@ func (h *Handler) CheckPostOwnershipMiddleware(requiredRole models.RoleStr, next
 			h.internalServerError(w, r, err)
 			return
 		}
-
-		// if !isAllowed {
-		// 	h.forbiddenError(w, r, err)
-		// 	return
-		// }
 
 		// get post from database
 		postID, err := parseIDParam(r, "postID")

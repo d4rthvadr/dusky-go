@@ -14,14 +14,19 @@ help: ## Show this help message
 	@echo "  migrate      Create a new migration file (usage: make migrate name=<migration_name>)"
 	@echo "  migrate-up   Run all pending migrations"
 	@echo "  migrate-down Rollback the last migration"
-	@echo "  migrate-force Force set migration version (usage: make migrate-force version=<version>)"
+	@echo "  migrate-force Force set migration version (usage: make migr>ate-force version=<version>)"
 	@echo "  migrate-version Show current migration version"
 	@echo "  dev          Start the development server with live reload"
 	@echo "  infra-up      Start the infrastructure using Docker Compose"
 	@echo "  seed         Seed the database with initial data"
 
+# Start the development server with live reload using Air (make sure Air is installed and configured properly)
 dev:
-	@air	
+	@air
+
+# Start the development server in devContainer mode (without live reload)		
+dev-api:
+	go run ./cmd/api	
 
 ## Infrastructure targets
 infra-up: ## Start the infrastructure using Docker Compose
