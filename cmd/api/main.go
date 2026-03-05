@@ -108,5 +108,7 @@ func main() {
 
 	mux := app.mount()
 
-	log.Fatal(app.Run(mux))
+	if err := app.Run(mux); err != nil {
+		log.Fatal(err)
+	}
 }
