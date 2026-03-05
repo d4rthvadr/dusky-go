@@ -8,14 +8,14 @@ import (
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
 	"github.com/d4rthvadr/dusky-go/internal/store"
-	"github.com/d4rthvadr/dusky-go/internal/utils"
+	"github.com/d4rthvadr/dusky-go/internal/utils/logger"
 )
 
 type Handler struct {
 	store            store.Storage
 	cache            cache.CacheStorage
 	version          string
-	logger           utils.Logger
+	logger           logger.Logger
 	mailConfig       config.MailConfig
 	mailer           mailer.Client
 	isProdEnv        bool
@@ -25,7 +25,7 @@ type Handler struct {
 type HandlerOptions struct {
 	Store            store.Storage
 	Version          string
-	Logger           utils.Logger
+	Logger           logger.Logger
 	MailConfig       config.MailConfig
 	Mailer           mailer.Client
 	JWTAuthenticator *auth.JWTAuthenticator

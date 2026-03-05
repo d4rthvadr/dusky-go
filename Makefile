@@ -1,6 +1,6 @@
 
 .DEFAULT_GOAL := help
-.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version seed dev infra-up infra-down gen-docs
+.PHONY: help migrate migrate-up migrate-down migrate-force migrate-version seed dev infra-up infra-down gen-docs format-docs test
 MIGRATION_DIR := ./migrations
 
 include .env
@@ -65,3 +65,6 @@ migrate-version: ## Show current migration version
 
 seed: ## Seed the database with initial data
 	@go run ./cmd/seed/seed.go	
+
+test: ## Run tests
+	@go test -v ./...	

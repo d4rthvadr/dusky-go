@@ -10,7 +10,7 @@ import (
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
 	"github.com/d4rthvadr/dusky-go/internal/store"
-	"github.com/d4rthvadr/dusky-go/internal/utils"
+	"github.com/d4rthvadr/dusky-go/internal/utils/logger"
 	"github.com/joho/godotenv"
 )
 
@@ -36,7 +36,7 @@ const version = "1.0.0"
 func main() {
 
 	err := godotenv.Load()
-	logger := utils.NewLogger()
+	logger := logger.NewLogger()
 	defer logger.Sync()
 	if err != nil {
 		logger.Fatal("Error loading .env file")
