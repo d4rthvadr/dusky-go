@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/auth"
@@ -78,9 +82,44 @@ func (app *application) Run(mux *chi.Mux) error {
 		IdleTimeout:  time.Minute,
 	}
 
+	shutdown := make(chan error, 1)
+
+	// Graceful shutdown
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		s := <-quit
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		app.logger.Infof("shutting down server, signal received: %s", s.String())
+
+		if err := srv.Shutdown(ctx); err != nil {
+			app.logger.Errorf("error shutting down server: %v", err)
+			shutdown <- err
+			return
+		}
+
+		shutdown <- nil
+
+	}()
+
+	err := srv.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		return err
+	}
+
+	if err == http.ErrServerClosed {
+		shutdownErr := <-shutdown
+		if shutdownErr != nil {
+			return shutdownErr
+		}
+	}
+
 	app.logger.Infof("server has started at %s", app.config.addr)
 
-	return srv.ListenAndServe()
+	return nil
 }
 
 type appOptions struct {
