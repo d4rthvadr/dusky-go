@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/d4rthvadr/dusky-go/internal/models"
+	"github.com/stretchr/testify/mock"
 )
 
 func NewMockStore() Storage {
@@ -15,6 +16,7 @@ func NewMockStore() Storage {
 }
 
 type UserStoreMock struct {
+	mock.Mock
 }
 
 func (m *UserStoreMock) Create(context.Context, *sql.Tx, *models.User) error {
