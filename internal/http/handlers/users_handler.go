@@ -25,7 +25,9 @@ type followUserPayload struct {
 	UserID int64 `json:"userId" validate:"required"`
 }
 
-const userContextKey string = "user"
+type contextKey string
+
+const userContextKey contextKey = "user"
 const UserIDKey string = "userID"
 
 // CreateUser godoc
