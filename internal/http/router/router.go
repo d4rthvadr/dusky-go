@@ -1,6 +1,7 @@
 package router
 
 import (
+	"expvar"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,9 @@ import (
 func MountV1Routes(r chi.Router, handler *handlers.Handler, apiURL string) {
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/health", handler.HealthCheck)
+
+		// TODO: Add authentication and rate limiting middleware to the routes below as needed.
+		r.Get("/debug/vars", expvar.Handler().ServeHTTP) // Expose expvar metrics at /debug/vars
 
 		normalizedAPIURL := strings.TrimRight(apiURL, "/")
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", normalizedAPIURL)

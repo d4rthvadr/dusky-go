@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"expvar"
 	"log"
+	"runtime"
 
 	"github.com/d4rthvadr/dusky-go/internal/auth"
 	"github.com/d4rthvadr/dusky-go/internal/cache"
@@ -113,6 +115,17 @@ func main() {
 		rateLimiter:      rateLimiter,
 		isProdEnv:        isProdEnv,
 	})
+
+	// Metrics collection
+	expvar.NewString("version").Set(version)
+	expvar.Publish("database", expvar.Func(func() any {
+
+		return db.Stats()
+	}))
+
+	expvar.Publish("go_routines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
 
 	mux := app.mount()
 
