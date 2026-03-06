@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -387,5 +388,27 @@ func (h *Handler) CheckPostOwnershipMiddleware(requiredRole models.RoleStr, next
 
 		next.ServeHTTP(w, r)
 
+	})
+}
+
+func (h *Handler) RateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// if rate limiter is not enabled, just call the next handler
+		if h.rateLimiter == nil {
+			// if rate limiter is not enabled, just call the next handler
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ip := r.RemoteAddr
+		allowed, retryAfter := h.rateLimiter.Allow(ip)
+		if !allowed {
+			w.Header().Set("Retry-After", strconv.Itoa(int(retryAfter.Seconds())))
+			h.tooManyRequestsError(w, r, nil)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

@@ -50,6 +50,13 @@ type AppConfig struct {
 	Environment string
 	ApiUrl      string
 	CacheConfig CacheConfig
+	RateLimiter RateLimiterConfig
+}
+
+type RateLimiterConfig struct {
+	RequestsPerTimeFrame int
+	TimeFrame            time.Duration
+	Enabled              bool
 }
 
 func InitializeConfig() (*AppConfig, error) {
@@ -100,6 +107,11 @@ func InitializeConfig() (*AppConfig, error) {
 			Password: env.GetEnv("REDIS_PASSWORD", ""),
 			DB:       env.GetEnvAsInt("REDIS_DB", 0),
 			Enabled:  env.GetEnvAsBool("REDIS_ENABLED", false),
+		},
+		RateLimiter: RateLimiterConfig{
+			RequestsPerTimeFrame: env.GetEnvAsInt("RATE_LIMITER_REQUESTS_COUNT", 60),
+			TimeFrame:            env.GetEnvAsDuration("RATE_LIMITER_TIME_FRAME", time.Minute),
+			Enabled:              env.GetEnvAsBool("RATE_LIMITER_ENABLED", true),
 		},
 	}
 	return config, nil

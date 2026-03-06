@@ -9,6 +9,7 @@ import (
 	"github.com/d4rthvadr/dusky-go/internal/config"
 	"github.com/d4rthvadr/dusky-go/internal/db"
 	"github.com/d4rthvadr/dusky-go/internal/mailer"
+	ratelimiter "github.com/d4rthvadr/dusky-go/internal/ratelmiter"
 	"github.com/d4rthvadr/dusky-go/internal/store"
 	"github.com/d4rthvadr/dusky-go/internal/utils/logger"
 	"github.com/joho/godotenv"
@@ -76,6 +77,12 @@ func main() {
 
 	store := store.NewStorage(db)
 
+	// Initialize the rate limiter
+	var rateLimiter ratelimiter.Limiter
+	if config.RateLimiter.Enabled {
+		rateLimiter = ratelimiter.NewFixedWindowRateLimiter(config.RateLimiter.RequestsPerTimeFrame, config.RateLimiter.TimeFrame)
+	}
+
 	appConfig := AppConfig{
 		addr:   config.Server.Host,
 		apiUrl: config.ApiUrl,
@@ -103,6 +110,7 @@ func main() {
 		mailConfig:       mailConfig,
 		mailer:           mailer,
 		jwtAuthenticator: jwtAuthenticator,
+		rateLimiter:      rateLimiter,
 		isProdEnv:        isProdEnv,
 	})
 
