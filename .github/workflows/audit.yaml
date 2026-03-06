@@ -15,8 +15,12 @@ jobs:
             - uses: actions/setup-go@v3
               with:
                   go-version: 1.24.0
+
             - name: Run gofmt check
               run: test -z "$(gofmt -l .)"
+
+            - name: Generate swagger docs
+              run: go run github.com/swaggo/swag/cmd/swag@latest init -g ./cmd/api/main.go -d . -o swagger
 
             - name: Run go vet
               run: go vet ./...
@@ -28,4 +32,4 @@ jobs:
               run: staticcheck ./...
 
             - name: Run tests
-              run: go test -race ./..
+              run: go test -race ./...
